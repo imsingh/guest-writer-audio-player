@@ -1,0 +1,749 @@
+---
+layout: post
+title: "Building Audio Player with Angular, Ionic, RxJS, and NgRx "
+description: "Learn how to create an Audio player using Angular, Ionic, RxJS and NgRx"
+date: "2018-05-03 08:30"
+author:
+  name: "Indermohan Singh"
+  url: "imsinghk7"
+  mail: "indermohansinghk7@gmail.com"
+  avatar: "https://twitter.com/imsinghk7/profile_image?size=original"
+related:
+- 2017-11-15-an-example-of-all-possible-elements
+---
+<!--
+**TL;DR:** Briefly describe what this article is about and what the reader will achieve/learn after reading it. Please
+also, provide the link to a GitHub repository that contains code related to this article.-->
+
+**TL;DR:** In this article, we'll implement an Audio player using Angular and Ionic. We will handle Audio Operations using RxJS Observables and we'll also explore how we can manage application's state with NgRx inside an Angular application. We will also use Auth0's Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
+
+<!--## The Second Most Important Title
+
+Usually, we start describing again what this article is about. The difference, however, is that here we can explain with
+more words. Another important thing that we should include in this first paragraph is the name of the main technologies
+that we will talk about, and add a link to them. For example, we could say that we are going to use
+[React](https://reactjs.org/) and [Redux](https://redux.js.org/) to develop a simple
+[SPA (Single Page Application)](https://en.wikipedia.org/wiki/Single-page_application).-->
+
+## Introduction
+
+Creating an Audio Player is always an intimidating task specially if you think about managing media's state, reacting to media events and reflecting these changes correctly on the UI. We will be using Angular and Ionic as our framework of choice. To handle the playback of media in a reactive way, we'll be adapting JavaScript's Audio Object to RxJS Observable. We will create our custom Observable for that. We'll use NgRx store to manage the state of the application in our app.
+
+Secondly, we will also create a very small backend using NodeJS and Google Cloud Storage to store our media files. Along with that, we will secure our Backend and App using Auth0's Authentication.
+
+## Frontend
+
+### Getting Started
+
+#### Prerequisites
+Since we are going to make a mobile application. We need to have the required SDKs for building the app. We are using Cordova to package our Ionic app into Native Package.
+
+* Installing Native sdks for building application.
+  * For iOS applications, you need to install XCode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements).
+
+  * For Android applications, you need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements).
+
+* You also need to install NodeJS. Go to <https://nodejs.org/en/download/> and download the package depending on your development machine.
+
+* You need to install Cordova CLI and Ionic CLI via npm.
+
+```
+$ npm install -g ionic cordova
+```
+
+#### Auth0 Configuration
+* Creating an Auth0 App 
+<!-- I just want to give reference to this article here, instead of writing about how to do it.-->
+https://auth0.com/docs/quickstart/native/ionic3
+
+* Creating an API in Auth0 Dashboard
+<!-- I need a url for the article explaning this -->
+https://auth0.com/docs/apis
+
+#### Scaffolding the app
+Let's scaffold an Ionic app using the blank template
+
+```
+$ ionic start audio-player blank
+```
+
+#### Installing Dependencies
+We are going to be using following dependencies for our application.
+
+* @angular/animations
+* @ngrx/store
+* moment
+* auth0-js, @auth0/cordova, @auth0/angular-jwt
+
+Let's install these dependencies.
+
+```
+$ cd audio-player
+$ npm install --save @angular/animations @ngrx/store moment auth0-js @auth0/cordova @auth0/angular-jwt
+```
+
+We also need to install cordova plugins for authentication using auth0.
+
+```
+# replace {YOUR_PACKAGE_ID} with your app identifier and YOUR_AUTH0_DOMAIN with your Auth0 Domain
+ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST=YOUR_AUTH0_DOMAIN --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
+$ ionic cordova plugin add cordova-plugin-safariviewcontroller
+```
+
+### Creating Audio Service for Managing Playback
+Let's first create an Audio Service using Ionic CLI
+
+```
+$ ionic generate provider audio
+```
+
+#### Creating Observable
+Observable is the central piece of code for our application. RxJS comes with helper function named 'create' to help us in creating custom observables.
+```Observable.create(observer);```
+
+It takes an *Observer* object and returns a function. 
+
+Observer object has three methods on it : 'next', 'error' and 'complete'.
+
+1. To emit value, we call observer.next method with the value.
+2. In case of an error, we fire the observer.error with error and observable ends.
+3. If we are done with observer and there is no value to emit, we call observer.complete method.
+
+We also return a function inside Observable, which is called when Observable is unsubscribed. So can we do the clean up of our Observable in that function.
+
+We are gonna be using this observable to notify about Media Events like playing, pause, timeupdate and so on. So basically, we will listen to the media event's of Audio() inside the observable and then notify it via observer.next method. Something like following:
+
+```typescript
+audioObj = new Audio();
+...
+streamObservable(url) {
+  return Observable.create(observer => {
+    this.audioObj.src = url;
+    this.audioObj.load();
+    this.audioObj.play();
+
+    handler = event => observer.next(event);
+    audioObj.addEventListener('playing', handler);
+    audioObj.addEventListener('pause', handler);
+    ... 
+
+    return () => {
+      audioObj.pause();
+      audioObj.currentTime = 0;
+
+      audioObj.removeEventListener('playing', handler);
+      audioObj.removeEventListener('plause', handler);
+    }
+  });
+}
+
+```
+
+Let's add some helper functions to add and remove event listeners in a bit elegant way. 
+
+```typescript
+let addEvents = function(events, obj, handler) {
+  events.forEach(event => {
+    obj.addEventListener(event, handler);
+  });
+}
+```
+
+```typescript
+let removeEvents = function(events, obj, handler) {
+  events.forEach(event => {
+    obj.removeEventListener(event, handler);
+  })
+}
+```
+
+Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via playStream() method. It looks like following:
+
+```typescript
+playStream(url) {
+    return this.streamObservable(url).pipe(takeUntil(this.stop$));
+}
+```
+
+It's important to notice that we automatically unsubscribe to this Observable if **this.stop$** emits any value. We are doing this via **takeUntil** method. It literally means that the Observable is going to emit value until **this.stop$** emits no value.
+
+
+#### Creating playback and helper methods
+
+**play Method**
+
+In play method, we call Audio() object's play method, to play the file when it is paused.
+
+```typescript
+play() {
+    this.audioObj.play();
+}
+```
+
+**pause Method**
+
+In pause method, we call Audio() object's pause method to pause the audio playback.
+
+```typescript
+pause() {
+    this.audioObj.pause();
+}
+```
+
+**stop Method**
+In stop method, we call Audio() object's stop method to stop the playback.
+
+```typescript
+stop() {
+    this.stop$.next();
+}
+```
+
+**seekTo Method**
+
+seekTo method takes seconds as input and change the current time of audio playback to that time.
+
+```typescript
+seekTo(seconds) {
+    this.audioObj.currentTime = seconds;
+}
+```
+
+**formatTime method**
+
+This is utility method to format time. It takes time and format as input and return the formatted time using **momentjs**.
+For example, 
+
+```typescript
+formatTime(time, format) {
+  return moment.utc(time).format(format);
+}
+```
+
+#### Complete Audio Service
+
+```typescript
+import { Injectable } from "@angular/core";
+import { Subject } from "rxjs/Subject";
+import { takeUntil } from "rxjs/operators";
+import { Observable } from "rxjs/Observable";
+import * as moment from "moment";
+
+@Injectable()
+export class AudioProvider {
+  private stop$ = new Subject();
+  private audioObj = new Audio();
+
+  constructor() {}
+
+  playStream(url) {
+    return this.streamObservable(url).pipe(takeUntil(this.stop$));
+  }
+
+  stop() {
+    this.stop$.next();
+  }
+
+  seekTo(seconds) {
+    this.audioObj.currentTime = seconds;
+  }
+  pause() {
+    this.audioObj.pause();
+  }
+
+  play() {
+    this.audioObj.play();
+  }
+
+  private streamObservable(url) {
+    let events = [
+      "ended",
+      "error",
+      "play",
+      "playing",
+      "pause",
+      "timeupdate",
+      "canplay",
+      "loadedmetadata",
+      "loadstart"
+    ];
+    let handlers = [];
+
+    let eventAdder = function(obj, events, observer) {
+      let handlers = [];
+      events.forEach(eventName => {
+        let handler = event => observer.next({ eventName, event });
+        obj.addEventListener(eventName, handler);
+        handlers.push({ eventName, handler });
+      });
+
+      return handlers;
+    };
+
+    let eventRemover = function(obj, handlers) {
+      handlers.forEach(event => {
+        obj.removeEventListener(event.eventName, event.handler);
+      });
+    };
+
+    return Observable.create(observer => {
+      // Play audio
+      this.audioObj.src = url;
+      this.audioObj.load();
+      this.audioObj.play();
+
+      // Media Events
+      handlers = eventAdder(this.audioObj, events, observer);
+
+      return () => {
+        // Stop Playing
+        this.audioObj.pause();
+        this.audioObj.currentTime = 0;
+
+        // Remove EventListeners
+        eventRemover(this.audioObj, handlers);
+      };
+    });
+  }
+
+  formatTime(time, format) {
+    return moment.utc(time).format(format);
+  }
+}
+```
+
+### Getting Media Files
+
+We have all our files in the Google Cloud Storage. We access Google Cloud Storage via our tiny Node App.
+
+#### Cloud Service
+
+We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_
+
+_url_ in this case is the url of our Node App.
+
+```typescript
+...
+@Injectable()
+export class CloudProvider {
+  url: string = "https://wt-3a798f13259d542814174ba32c1e8bf1-0.sandbox.auth0-extend.com/google-cloud";
+  constructor(private http: HttpClient) {}
+
+  getFiles() {
+    const url = `${this.url}/media`;
+    return this.http.get(url).pipe(
+      map((data: any) => {
+        return data.apiResponse.items.filter(file => {
+          return (
+            file.contentType !==
+            "application/x-www-form-urlencoded;charset=UTF-8"
+          );
+        });
+      })
+    );
+  }
+}
+```
+### Managing Application State
+In this application, we are using NgRx to manage the state of our application. NgRx is based on Redux, which is very famous in React world for managing state. 
+
+Let's briefly understand redux.
+
+In Redux, we manage our state in one place. In other words, we have just one object which stores/saves the state of our application. If at any point, we want to update the state, we **dispatch** and **Action** to a function, called as reducer function. This reducer function than update the state based on the action type.
+
+#### Creating Reducer
+
+By default, NgRx Action only has type property. But we need to send some information along with the type of action. So, We are going to extend the NgRx Action to suit our needs. We will name it _MediaAction_.
+
+```typescript
+export interface MediaAction extends Action {
+  type: string;
+  payload?: any;
+}
+```
+
+Then we need the action type for Media Events like canplay, playing and so on. Here is how we do it.
+
+```typescript
+export const CANPLAY = "CANPLAY";
+export const LOADEDMETADATA = "LOADEDMETADATA";
+export const PLAYING = "PLAYING";
+export const TIMEUPDATE = "TIMEUPDATE";
+export const LOADSTART = "LOADSTART";
+export const RESET = "RESET";
+```
+And Finally, we need a reducer function which recieves the action and do state update based on type of the action.
+
+```typescript
+export function mediaStateReducer(state: any, action: MediaAction) {
+  let payload = action.payload;
+  switch (action.type) {
+    case CANPLAY:
+      state = Object.assign({}, state);
+      state.media.canplay = payload.value;
+      return state;
+    case LOADEDMETADATA:
+      state = Object.assign({}, state);
+      state.media.loadedmetadata = payload.value;
+      state.media.duration = payload.data.time;
+      state.media.durationSec = payload.data.timeSec;
+      state.media.mediaType = payload.data.mediaType;
+      return state;
+    case PLAYING:
+      state = Object.assign({}, state);
+      state.media.playing = payload.value;
+      return state;
+    case TIMEUPDATE:
+      state = Object.assign({}, state);
+      state.media.time = payload.time;
+      state.media.timeSec = payload.timeSec;
+      return state;
+    case LOADSTART:
+      state.media.loadstart = payload.value;
+      return Object.assign({}, state);
+    case RESET:
+      state = Object.assign({}, state);
+      state.media = {};
+      return state;
+
+    default:
+      state = {};
+      state.media = {};
+      return state;
+  }
+```
+
+Within each case, we are updating the state. It's also important to remember that, NgRx works with immutable object. In other words, each time reducer function is called, we need to create a new state object with the updated state. In our case, we are using Object.assign to create a new object.
+
+### Authentication
+
+#### Auth0 Configuration
+
+Let's create a file auth.config.ts and save the configuration as follows:
+
+```typescript
+export const AUTH_CONFIG = {
+  // Needed for Auth0 (capitalization: ID):
+  clientID: "FdYExxj2WTKocvJyd1qhw1lbhojUyAvZ",
+  // Needed for Auth0Cordova (capitalization: Id):
+  clientId: "FdYExxj2WTKocvJyd1qhw1lbhojUyAvZ",
+  domain: "imtest.auth0.com",
+  audience: "http://audioapp.ragakosh.com",
+  packageIdentifier: "com.inders.audioplayer" // config.xml widget ID, e.g., com.auth0.ionic
+};
+```
+Let's demystify all these values:
+
+* clientID/clientId: You will get clientID in Auth0 Dashboard. It's unique per application.
+
+* domain: It's the domain that is assiged to your account. It's common for all of your application.
+
+* audience: It's the value of your API Identifier. Basically a URL, which is not publicly accessible.
+
+* packageIdentifier: It's the widget ID of your Ionic application. You have this is config.xml file of your application.
+
+#### Auth Service
+<!--I don't really want to explain the Auth Service. Because it's basically the same auth service from Ionic3 Quickstart with minor change -->
+```typescript
+
+```
+
+### Audio Player UI
+So far we have written code which is not related to UI of the application. In this section, we will design the UI and it's behavior.
+Our Application will look like following image.
+
+<!--Image here -->
+
+#### Audio Player HTML
+{% highlight html %}
+{% endhighlight %}
+
+On the top we have a Navbar which contains the name of application and Logout button. This logout button will be shown if user is logged in.
+
+{% highlight html %}
+<ion-header>
+    <ion-navbar color="primary">
+        <ion-title>Audio Player</ion-title>
+        <ion-buttons end>
+            <button *ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
+        </ion-buttons>
+    </ion-navbar>
+</ion-header>
+{% endhighlight %}
+
+We also show a Loading text when user is being logged in using the following HTML.
+{% highlight html %}
+ <p *ngIf="auth.loading" text-center>Loading...</p>
+{% endhighlight %}
+
+We also show the Logo and Name of our application along with Log In button as follows:
+{% highlight html %}
+  <ng-template [ngIf]="!auth.loading || !loggedIn">
+    <div padding id="app-section" text-center>
+      <ion-icon color="primary" name="musical-notes"></ion-icon>
+      <h2 id="app-title">Audio Player</h2>
+      <button outline ion-button block color="primary" *ngIf="!loggedIn" (click)="login()">Log In</button>
+    </div>
+  </ng-template>
+{% endhighlight %}
+
+Then we show the List of Media Files stored in our Google Cloud Database.
+{% highlight html %}
+<ion-list *ngIf="files.length && loggedIn">
+    <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
+    <ng-container *ngFor="let file of files; let i = index">
+      <ion-item text-wrap (click)="openFile(file, i)">
+        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
+        <p item-end *ngIf="currentFile.index === i">SELECTED</p>
+        <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
+      </ion-item>
+    </ng-container>
+  </ion-list>
+{% endhighlight %}
+
+In the footer of our Ionic Application, we have media controls like play button, pause button and so on. Here is how we show it.
+
+We have a seekbar created with ion-range. It allows user to change the current time of running audio file. Here is HTML for that :
+{% highlight html %}
+<ion-toolbar color="primary">
+  <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
+    name="seekbar">
+    <ion-label color="light" range-left>{{ state.time }}</ion-label>
+    <ion-label color="light" range-right>{{ state.duration }}</ion-label>
+  </ion-range>
+</ion-toolbar>
+{% endhighlight %}
+
+And then we have playback controls using following HTML:
+
+{% highlight html %}
+<ion-toolbar color="primary" padding>
+    <ion-grid>
+      <ion-row align-items-center id="media-controls">
+        <button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
+          <ion-icon color="light" name="skip-backward"> </ion-icon>
+        </button>
+        <button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
+          <ion-icon color="light" name="play"></ion-icon>
+        </button>
+        <button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
+          <ion-icon color="light" name="pause"></ion-icon>
+        </button>
+        <button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
+          <ion-icon color="light" name="skip-forward"></ion-icon>
+        </button>
+      </ion-row>
+    </ion-grid>
+</ion-toolbar>
+{% endhighlight %}
+
+This is how our complete UI is constructed:
+
+{% highlight html %}
+<ion-header>
+  <ion-navbar color="primary">
+    <ion-title>Audio Player</ion-title>
+    <ion-buttons end>
+      <button *ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
+    </ion-buttons>
+  </ion-navbar>
+</ion-header>
+
+
+<ion-content padding>
+  <p *ngIf="auth.loading" text-center>Loading...</p>
+  <ng-template [ngIf]="!auth.loading || !loggedIn">
+    <div padding id="app-section" text-center>
+      <ion-icon color="primary" name="musical-notes"></ion-icon>
+      <h2 id="app-title">Audio Player</h2>
+      <button outline ion-button block color="primary" *ngIf="!loggedIn" (click)="login()">Log In</button>
+    </div>
+  </ng-template>
+  <!--<ion-list *ngIf="files.length">-->
+  <ion-list *ngIf="files.length && loggedIn">
+    <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
+    <ng-container *ngFor="let file of files; let i = index">
+      <ion-item text-wrap (click)="openFile(file, i)">
+        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
+        <p item-end *ngIf="currentFile.index === i">SELECTED</p>
+        <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
+      </ion-item>
+    </ng-container>
+  </ion-list>
+
+</ion-content>
+
+<!--<ion-footer *ngIf="currentFile.file" >-->
+<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
+  <ion-toolbar color="primary">
+    <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
+      name="seekbar">
+      <ion-label color="light" range-left>{{ state.time }}</ion-label>
+      <ion-label color="light" range-right>{{ state.duration }}</ion-label>
+    </ion-range>
+
+  </ion-toolbar>
+  <ion-toolbar color="primary" padding>
+    <ion-grid>
+      <ion-row align-items-center id="media-controls">
+        <button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
+          <ion-icon color="light" name="skip-backward"> </ion-icon>
+        </button>
+        <button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
+          <ion-icon color="light" name="play"></ion-icon>
+        </button>
+        <button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
+          <ion-icon color="light" name="pause"></ion-icon>
+        </button>
+        <button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
+          <ion-icon color="light" name="skip-forward"></ion-icon>
+        </button>
+      </ion-row>
+    </ion-grid>
+
+  </ion-toolbar>
+</ion-footer>
+{% endhighlight %}
+
+#### Styling Player's UI
+
+```scss
+
+```
+
+#### Logic behind Audio UI
+
+We are using the default HomePage for Audio Player, that we get using **_ionic start_** command.
+
+In the constructor of HomePage, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call getDocuments Method.
+
+```typescript
+constructor(...) {
+  this.auth.isLoggedIn$.subscribe((isLoggedIn: any) => {
+      this.loggedIn = isLoggedIn;
+      if (isLoggedIn) {
+        this.getDocuments();
+      }
+  });
+}
+```
+
+This getDocuments method when called, show as nice Loader on screen using presentLoading method and fetch files via cloudProvider's getFiles method as shown below:
+
+```typescript
+getDocuments() {
+    let loader = this.presentLoading();
+    this.cloudProvider.getFiles().subscribe(files => {
+      this.files = files;
+      loader.dismiss();
+    });
+}
+```
+
+In Ionic, we have lifecylehookso just like Angular. One such life cycle hook is _ionViewWillLoad_. We are listening all media events using NgRx store inside this lifecyclehook method.
+
+We are assigning the state of media to _this.state_ property.
+
+```typescript
+this.store.select("appState").subscribe((value: any) => {
+  this.state = value.media;
+});
+```
+
+Whenever user clicks on the Media File. This function is fired. We prepare the media url in Google Cloud and fire playStream method with that _url_.
+
+```typescript
+openFile(file, index) {
+  this.currentFile = { index, file };
+  let url = `https://storage.googleapis.com/${file.bucket}/${file.name}`;
+  this.playStream(url);
+}
+```
+
+This playStream method first reset the current media state via resetState method.
+
+```typescript
+resetState() {
+    this.audioProvider.stop();
+    this.store.dispatch({ type: RESET });
+}
+```
+
+resetState method stop the currently running media file and dispatch **RESET** action to reset media state.
+
+Then playstream method fires playStream method of AudioProvider, which returns an Observable. We subscribe to that Observable and start listening Media Events like canplay, playing etc.
+Based on each particular event, we dispatch a store action with appropriate payload.
+
+```typescript
+playStream(url) {
+    this.resetState();
+    this.audioProvider.playStream(url).subscribe(event => {
+      const audioObj = event.target;
+      if (event.type === "canplay") {
+        this.store.dispatch({ type: CANPLAY, payload: { value: true } });
+      } else if (event.type === "loadedmetadata") {
+        this.store.dispatch({
+          type: LOADEDMETADATA,
+          payload: {
+            value: true,
+            data: {
+              time: this.audioProvider.formatTime(
+                audioObj.duration * 1000,
+                "HH:mm:ss"
+              ),
+              timeSec: audioObj.duration,
+              mediaType: "mp3"
+            }
+          }
+        });
+      } else if (event.type === "playing") {
+        this.store.dispatch({ type: PLAYING, payload: { value: true } });
+      } else if (event.type === "pause" || event.type === "ended") {
+        this.store.dispatch({ type: PLAYING, payload: { value: false } });
+      } else if (event.type === "timeupdate") {
+        this.store.dispatch({
+          type: TIMEUPDATE,
+          payload: {
+            timeSec: audioObj.currentTime,
+            time: this.audioProvider.formatTime(
+              audioObj.currentTime * 1000,
+              "HH:mm:ss"
+            )
+          }
+        });
+      } else if (event.type === "loadstart") {
+        this.store.dispatch({ type: LOADSTART, payload: { value: true } });
+      }
+    });
+  }
+```
+
+So once playStream method is fired, media playback is initiated. User might want to pause the playback. For that we have pause method which basically calls AudioProvider's pause method.
+
+```typescript
+pause() {
+    this.audioProvider.pause();
+}
+```
+
+It's also true that, User also might want to replay the media again. For that we have a play method. It's important to not that we can't use playStream method here because it resets the media state and start playing audio file from beginning.
+
+```typescript
+pause() {
+    this.audioProvider.pause();
+}
+```
+
+To stop the media, we have stop method, which calls the AudioProvider's stop method to stop media playback.
+
+```typescript
+stop() {
+    this.audioProvider.stop();
+}
+```
+
+## Backend
+
+### Accessing Google Cloud
+
+### Securing Endpoint
