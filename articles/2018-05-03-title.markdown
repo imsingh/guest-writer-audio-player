@@ -11,11 +11,12 @@ author:
 related:
 - 2017-11-15-an-example-of-all-possible-elements
 ---
+
 <!--
 **TL;DR:** Briefly describe what this article is about and what the reader will achieve/learn after reading it. Please
 also, provide the link to a GitHub repository that contains code related to this article.-->
 
-**TL;DR:** In this article, we'll implement an Audio player using Angular and Ionic. We will handle Audio Operations using RxJS Observables and we'll also explore how we can manage application's state with NgRx inside an Angular application. We will also use Auth0's Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
+**TL;DR:** In this article, we'll implement an Audio player using **Angular** and **Ionic**. We will handle Audio Operations using **RxJS** _Observables_ and we'll also explore how we can manage application's state with **NgRx** inside an Angular application. We will also use **Auth0** for Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
 
 <!--## The Second Most Important Title
 
@@ -27,19 +28,21 @@ that we will talk about, and add a link to them. For example, we could say that 
 
 ## Introduction
 
-Creating an Audio Player is always an intimidating task specially if you think about managing media's state, reacting to media events and reflecting these changes correctly on the UI. We will be using Angular and Ionic as our framework of choice. To handle the playback of media in a reactive way, we'll be adapting JavaScript's Audio Object to RxJS Observable. We will create our custom Observable for that. We'll use NgRx store to manage the state of the application in our app.
+Creating an Audio Player is always an intimidating task specially if you think about managing media's _state_, reacting to media _events_ and reflecting these changes correctly on the UI. We will be using Angular and Ionic as our framework of choice. To handle the playback of media in a reactive way, we'll be adapting JavaScript's **Audio** Object to **RxJS** _Observable_. We will create our custom Observable for that. We'll use **NgRx** store to manage the state of the application in our app.
 
-Secondly, we will also create a very small backend using NodeJS and Google Cloud Storage to store our media files. Along with that, we will secure our Backend and App using Auth0's Authentication.
+Secondly, we will also create a very small backend using **NodeJS** and **Google Cloud Storage** to store our media files. Along with that, we will secure our Backend and App using **Auth0**.
 
 ## Frontend
 
 ### Getting Started
 
 #### Prerequisites
+
 Since we are going to make a mobile application. We need to have the required SDKs for building the app. We are using Cordova to package our Ionic app into Native Package.
 
-* Installing Native sdks for building application.
-  * For iOS applications, you need to install XCode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements).
+* Instal the Native sdks for building application.
+
+  * For iOS applications, you need to install XCode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). It's important to keep in mind that, you need macOS to install xCode.
 
   * For Android applications, you need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements).
 
@@ -51,16 +54,67 @@ Since we are going to make a mobile application. We need to have the required SD
 $ npm install -g ionic cordova
 ```
 
-#### Auth0 Configuration
-* Creating an Auth0 App 
-<!-- I just want to give reference to this article here, instead of writing about how to do it.-->
-https://auth0.com/docs/quickstart/native/ionic3
+### Auth0 Configuration
 
-* Creating an API in Auth0 Dashboard
-<!-- I need a url for the article explaning this -->
-https://auth0.com/docs/apis
+We are going to secure our app and backend api with Auth0. For that we need to create an Auth0 App and create an Auth0 API. Let's do it.
+
+#### Creating Auth0 Account
+
+Let's begin with creating an Auth0 Account.
+
+1.  First, go to <https://auth0.com/signup> and Sign Up.
+2.  Then, Select the Tenant Domain. It's gonna be your Auth0 Domain, which we are going to use for authentication.
+3.  Finally, Select Personal Account, type of application and other required field and click **Next**. It will open Auth0 Dashboard.
+
+#### Creating an Auth0 App
+
+Now that we have our Auth0 account. Let's create Auth0 app.
+
+1.  In Auth0 Dashboard, click on _+ Create Application_. It will open create application dialog box.
+2.  Write the name of the application and select the type of application as Native App and press **Create** Button.
+
+#### Configuring our App
+
+In order to make our app communicate with Auth0, we need to configure Auth0 App and we need certain Information.
+
+1.  Click on Applications in sidemenu and select the newly created app. It will open settings of the application.
+2.  In the **Allowed Web Origins** Box, input the following value:
+    `file://*,http://localhost:8080/*`
+3.  You also need to configure callback url for the application. It's url which Auth0 will redirect to after user is Authenticated.
+
+Set the callback url in **Allowed Callback URLs** Box as follows:
+
+```
+# replace YOUR_PACKAGE_ID with your app package ID
+# replace YOUR_AUTH_DOMAIN with your Auth0 Domain
+YOUR_PACKAGE_ID://YOUR_AUTH_DOMAIN/cordova/YOUR_PACKAGE_ID/callback
+```
+
+#### Creating an API
+
+Now that we have our Auth0 app created. We need to create an Auth0 API. Which is required to secure our backend app.
+
+1.  Click on APIs in the sidemenu in Auth0 Dashboard and click on _+ Create API_ button. It will open a create api dialog.
+2.  Input the following details:
+
+    a. Name: Choose any user friendly name to recognize API.
+    b. Identifier: Choose any unique identifier for the API. It is recommend to use a URL, which is not publicly available. We need this Identifier later while coding the application.
+    c. Signing Algorithm: It should be RS256.
+
+3.  Then press **Create**.
+
+#### Collect Following Information
+
+We need following information for our application:
+
+* _Domain_ : It's your Auth0 Domain.
+
+* _ClientID_ : It's unique per application. You will get it from Application's setting page.
+
+* _API Identifier_ : We need the Identifier value of API, that we have created. You will get it from API's setting page.
 
 #### Scaffolding the app
+
 Let's scaffold an Ionic app using the blank template
 
 ```
@@ -68,6 +122,7 @@ $ ionic start audio-player blank
 ```
 
 #### Installing Dependencies
+
 We are going to be using following dependencies for our application.
 
 * @angular/animations
@@ -91,6 +146,7 @@ $ ionic cordova plugin add cordova-plugin-safariviewcontroller
 ```
 
 ### Creating Audio Service for Managing Playback
+
 Let's first create an Audio Service using Ionic CLI
 
 ```
@@ -98,16 +154,17 @@ $ ionic generate provider audio
 ```
 
 #### Creating Observable
-Observable is the central piece of code for our application. RxJS comes with helper function named 'create' to help us in creating custom observables.
-```Observable.create(observer);```
 
-It takes an *Observer* object and returns a function. 
+Observable is the central piece of code for our application. RxJS comes with helper function named 'create' to help us in creating custom observables.
+`Observable.create(observer);`
+
+It takes an _Observer_ object and returns a function.
 
 Observer object has three methods on it : 'next', 'error' and 'complete'.
 
-1. To emit value, we call observer.next method with the value.
-2. In case of an error, we fire the observer.error with error and observable ends.
-3. If we are done with observer and there is no value to emit, we call observer.complete method.
+1.  To emit value, we call observer.next method with the value.
+2.  In case of an error, we fire the observer.error with error and observable ends.
+3.  If we are done with observer and there is no value to emit, we call observer.complete method.
 
 We also return a function inside Observable, which is called when Observable is unsubscribed. So can we do the clean up of our Observable in that function.
 
@@ -125,7 +182,7 @@ streamObservable(url) {
     handler = event => observer.next(event);
     audioObj.addEventListener('playing', handler);
     audioObj.addEventListener('pause', handler);
-    ... 
+    ...
 
     return () => {
       audioObj.pause();
@@ -136,25 +193,24 @@ streamObservable(url) {
     }
   });
 }
-
 ```
 
-Let's add some helper functions to add and remove event listeners in a bit elegant way. 
+Let's add some helper functions to add and remove event listeners in a bit elegant way.
 
 ```typescript
 let addEvents = function(events, obj, handler) {
   events.forEach(event => {
     obj.addEventListener(event, handler);
   });
-}
+};
 ```
 
 ```typescript
 let removeEvents = function(events, obj, handler) {
   events.forEach(event => {
     obj.removeEventListener(event, handler);
-  })
-}
+  });
+};
 ```
 
 Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via playStream() method. It looks like following:
@@ -166,7 +222,6 @@ playStream(url) {
 ```
 
 It's important to notice that we automatically unsubscribe to this Observable if **this.stop$** emits any value. We are doing this via **takeUntil** method. It literally means that the Observable is going to emit value until **this.stop$** emits no value.
-
 
 #### Creating playback and helper methods
 
@@ -212,7 +267,7 @@ seekTo(seconds) {
 **formatTime method**
 
 This is utility method to format time. It takes time and format as input and return the formatted time using **momentjs**.
-For example, 
+For example,
 
 ```typescript
 formatTime(time, format) {
@@ -344,8 +399,10 @@ export class CloudProvider {
   }
 }
 ```
+
 ### Managing Application State
-In this application, we are using NgRx to manage the state of our application. NgRx is based on Redux, which is very famous in React world for managing state. 
+
+In this application, we are using NgRx to manage the state of our application. NgRx is based on Redux, which is very famous in React world for managing state.
 
 Let's briefly understand redux.
 
@@ -372,6 +429,7 @@ export const TIMEUPDATE = "TIMEUPDATE";
 export const LOADSTART = "LOADSTART";
 export const RESET = "RESET";
 ```
+
 And Finally, we need a reducer function which recieves the action and do state update based on type of the action.
 
 ```typescript
@@ -432,6 +490,7 @@ export const AUTH_CONFIG = {
   packageIdentifier: "com.inders.audioplayer" // config.xml widget ID, e.g., com.auth0.ionic
 };
 ```
+
 Let's demystify all these values:
 
 * clientID/clientId: You will get clientID in Auth0 Dashboard. It's unique per application.
@@ -443,18 +502,21 @@ Let's demystify all these values:
 * packageIdentifier: It's the widget ID of your Ionic application. You have this is config.xml file of your application.
 
 #### Auth Service
-<!--I don't really want to explain the Auth Service. Because it's basically the same auth service from Ionic3 Quickstart with minor change -->
-```typescript
 
+<!--I don't really want to explain the Auth Service. Because it's basically the same auth service from Ionic3 Quickstart with minor change -->
+
+```typescript
 ```
 
 ### Audio Player UI
+
 So far we have written code which is not related to UI of the application. In this section, we will design the UI and it's behavior.
 Our Application will look like following image.
 
 <!--Image here -->
 
 #### Audio Player HTML
+
 {% highlight html %}
 {% endhighlight %}
 
@@ -462,43 +524,46 @@ On the top we have a Navbar which contains the name of application and Logout bu
 
 {% highlight html %}
 <ion-header>
-    <ion-navbar color="primary">
-        <ion-title>Audio Player</ion-title>
-        <ion-buttons end>
-            <button *ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
-        </ion-buttons>
-    </ion-navbar>
+<ion-navbar color="primary">
+<ion-title>Audio Player</ion-title>
+<ion-buttons end>
+<button \*ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
+</ion-buttons>
+</ion-navbar>
 </ion-header>
 {% endhighlight %}
 
 We also show a Loading text when user is being logged in using the following HTML.
 {% highlight html %}
+
  <p *ngIf="auth.loading" text-center>Loading...</p>
 {% endhighlight %}
 
 We also show the Logo and Name of our application along with Log In button as follows:
 {% highlight html %}
-  <ng-template [ngIf]="!auth.loading || !loggedIn">
-    <div padding id="app-section" text-center>
-      <ion-icon color="primary" name="musical-notes"></ion-icon>
-      <h2 id="app-title">Audio Player</h2>
-      <button outline ion-button block color="primary" *ngIf="!loggedIn" (click)="login()">Log In</button>
-    </div>
-  </ng-template>
+<ng-template [ngIf]="!auth.loading || !loggedIn">
+
+<div padding id="app-section" text-center>
+<ion-icon color="primary" name="musical-notes"></ion-icon>
+<h2 id="app-title">Audio Player</h2>
+<button outline ion-button block color="primary" \*ngIf="!loggedIn" (click)="login()">Log In</button>
+</div>
+</ng-template>
 {% endhighlight %}
 
 Then we show the List of Media Files stored in our Google Cloud Database.
 {% highlight html %}
 <ion-list *ngIf="files.length && loggedIn">
-    <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
-    <ng-container *ngFor="let file of files; let i = index">
-      <ion-item text-wrap (click)="openFile(file, i)">
-        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
-        <p item-end *ngIf="currentFile.index === i">SELECTED</p>
-        <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
-      </ion-item>
-    </ng-container>
-  </ion-list>
+<ion-list-header>Hello {{auth.user.name}}</ion-list-header>
+<ng-container *ngFor="let file of files; let i = index">
+<ion-item text-wrap (click)="openFile(file, i)">
+<ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
+
+<p item-end *ngIf="currentFile.index === i">SELECTED</p>
+<ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
+</ion-item>
+</ng-container>
+</ion-list>
 {% endhighlight %}
 
 In the footer of our Ionic Application, we have media controls like play button, pause button and so on. Here is how we show it.
@@ -506,11 +571,11 @@ In the footer of our Ionic Application, we have media controls like play button,
 We have a seekbar created with ion-range. It allows user to change the current time of running audio file. Here is HTML for that :
 {% highlight html %}
 <ion-toolbar color="primary">
-  <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
-    name="seekbar">
-    <ion-label color="light" range-left>{{ state.time }}</ion-label>
-    <ion-label color="light" range-right>{{ state.duration }}</ion-label>
-  </ion-range>
+<ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
+name="seekbar">
+<ion-label color="light" range-left>{{ state.time }}</ion-label>
+<ion-label color="light" range-right>{{ state.duration }}</ion-label>
+</ion-range>
 </ion-toolbar>
 {% endhighlight %}
 
@@ -518,22 +583,22 @@ And then we have playback controls using following HTML:
 
 {% highlight html %}
 <ion-toolbar color="primary" padding>
-    <ion-grid>
-      <ion-row align-items-center id="media-controls">
-        <button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
-          <ion-icon color="light" name="skip-backward"> </ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
-          <ion-icon color="light" name="play"></ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
-          <ion-icon color="light" name="pause"></ion-icon>
-        </button>
-        <button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
-          <ion-icon color="light" name="skip-forward"></ion-icon>
-        </button>
-      </ion-row>
-    </ion-grid>
+<ion-grid>
+<ion-row align-items-center id="media-controls">
+<button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
+<ion-icon color="light" name="skip-backward"> </ion-icon>
+</button>
+<button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
+<ion-icon color="light" name="play"></ion-icon>
+</button>
+<button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
+<ion-icon color="light" name="pause"></ion-icon>
+</button>
+<button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
+<ion-icon color="light" name="skip-forward"></ion-icon>
+</button>
+</ion-row>
+</ion-grid>
 </ion-toolbar>
 {% endhighlight %}
 
@@ -541,14 +606,13 @@ This is how our complete UI is constructed:
 
 {% highlight html %}
 <ion-header>
-  <ion-navbar color="primary">
-    <ion-title>Audio Player</ion-title>
-    <ion-buttons end>
-      <button *ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
-    </ion-buttons>
-  </ion-navbar>
+<ion-navbar color="primary">
+<ion-title>Audio Player</ion-title>
+<ion-buttons end>
+<button \*ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
+</ion-buttons>
+</ion-navbar>
 </ion-header>
-
 
 <ion-content padding>
   <p *ngIf="auth.loading" text-center>Loading...</p>
@@ -574,13 +638,14 @@ This is how our complete UI is constructed:
 </ion-content>
 
 <!--<ion-footer *ngIf="currentFile.file" >-->
-<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
-  <ion-toolbar color="primary">
-    <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
-      name="seekbar">
-      <ion-label color="light" range-left>{{ state.time }}</ion-label>
-      <ion-label color="light" range-right>{{ state.duration }}</ion-label>
-    </ion-range>
+
+<ion-footer \*ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
+<ion-toolbar color="primary">
+<ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
+name="seekbar">
+<ion-label color="light" range-left>{{ state.time }}</ion-label>
+<ion-label color="light" range-right>{{ state.duration }}</ion-label>
+</ion-range>
 
   </ion-toolbar>
   <ion-toolbar color="primary" padding>
@@ -608,7 +673,6 @@ This is how our complete UI is constructed:
 #### Styling Player's UI
 
 ```scss
-
 ```
 
 #### Logic behind Audio UI
