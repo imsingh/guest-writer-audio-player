@@ -412,6 +412,8 @@ In Redux, we manage our state in one place. In other words, we have just one obj
 
 By default, NgRx Action only has type property. But we need to send some information along with the type of action. So, We are going to extend the NgRx Action to suit our needs. We will name it _MediaAction_.
 
+Let's create a file _store.ts_ in _/src/providers/store/_ folder and do the following:
+
 ```typescript
 export interface MediaAction extends Action {
   type: string;
@@ -473,40 +475,153 @@ export function mediaStateReducer(state: any, action: MediaAction) {
 
 Within each case, we are updating the state. It's also important to remember that, NgRx works with immutable object. In other words, each time reducer function is called, we need to create a new state object with the updated state. In our case, we are using Object.assign to create a new object.
 
+#### Configuring StoreModule
+
+In the app.module.ts file import the StoreModule from @ngrx/store and add it to NgModule's imports array as follows:
+
+```typescript
+StoreModule.forRoot({
+  appState: mediaStateReducer
+}),
+```
+
+You can now access the state using **appState** key anywhere in the application.
+
 ### Authentication
 
 #### Auth0 Configuration
 
-Let's create a file auth.config.ts and save the configuration as follows:
+Let's create a file _auth.config.ts_ in _/src/providers/auth0/_ folder and save the configuration as follows:
 
 ```typescript
 export const AUTH_CONFIG = {
   // Needed for Auth0 (capitalization: ID):
-  clientID: "FdYExxj2WTKocvJyd1qhw1lbhojUyAvZ",
+  clientID: "YOUR_CLIENT_ID",
   // Needed for Auth0Cordova (capitalization: Id):
-  clientId: "FdYExxj2WTKocvJyd1qhw1lbhojUyAvZ",
-  domain: "imtest.auth0.com",
-  audience: "http://audioapp.ragakosh.com",
-  packageIdentifier: "com.inders.audioplayer" // config.xml widget ID, e.g., com.auth0.ionic
+  clientId: "YOUR_CLIENT_ID",
+  domain: "YOUR_AUTH_DOMAIN",
+  audience: "YOUR_API_IDENTIFIER",
+  packageIdentifier: "your.app.id" // config.xml widget ID, e.g., com.auth0.ionic
 };
 ```
 
 Let's demystify all these values:
 
-* clientID/clientId: You will get clientID in Auth0 Dashboard. It's unique per application.
+* _clientID/clientId_ : It's the ClientID that we got from Auth0 Dashboard.
 
-* domain: It's the domain that is assiged to your account. It's common for all of your application.
+* _domain_ : It's your Auth0 Domain.
 
-* audience: It's the value of your API Identifier. Basically a URL, which is not publicly accessible.
+* _audience_ : It's the API Identifier value.
 
-* packageIdentifier: It's the widget ID of your Ionic application. You have this is config.xml file of your application.
+* _packageIdentifier_ : It's the widget ID of your Ionic application. You have this is **config.xml** file of your application.
 
 #### Auth Service
 
-<!--I don't really want to explain the Auth Service. Because it's basically the same auth service from Ionic3 Quickstart with minor change -->
+Auth Service will have methods like login and logout to facilitate authentication process.
+
+Let's create _auth.service.ts_ in the same _auth0_ folder and add the following content.
 
 ```typescript
+import { Injectable, NgZone } from "@angular/core";
+import { Storage } from "@ionic/storage";
+import { Subject } from "rxjs";
+
+// Import AUTH_CONFIG, Auth0Cordova, and auth0.js
+import { AUTH_CONFIG } from "./auth.config";
+import Auth0Cordova from "@auth0/cordova";
+import * as auth0 from "auth0-js";
+
+@Injectable()
+export class AuthService {
+  Auth0 = new auth0.WebAuth(AUTH_CONFIG);
+  Client = new Auth0Cordova(AUTH_CONFIG);
+  accessToken: string;
+  user: any;
+  loggedIn: boolean;
+  loading = true;
+  isLoggedIn$ = new Subject();
+  constructor(public zone: NgZone, private storage: Storage) {
+    this.storage.get("profile").then(user => (this.user = user));
+    this.storage.get("access_token").then(token => (this.accessToken = token));
+    this.storage.get("expires_at").then(exp => {
+      this.loggedIn = Date.now() < JSON.parse(exp);
+      this.loading = false;
+      this.isLoggedIn$.next(this.loggedIn);
+    });
+  }
+
+  login() {
+    const promise = new Promise((resolve, reject) => {
+      this.loading = true;
+      const options = {
+        scope: "openid profile offline_access",
+        audience: AUTH_CONFIG.audience
+      };
+      // Authorize login request with Auth0: open login page and get auth results
+      this.Client.authorize(options, (err, authResult) => {
+        if (err) {
+          this.loading = false;
+          reject(err);
+        } else {
+          // Set access token
+          console.log(authResult);
+          this.storage.set("id_token", authResult.idToken);
+          this.storage.set("access_token", authResult.accessToken);
+          this.accessToken = authResult.accessToken;
+          // Set access token expiration
+          const expiresAt = JSON.stringify(
+            authResult.expiresIn * 1000 + new Date().getTime()
+          );
+          this.storage.set("expires_at", expiresAt);
+          // Set logged in
+          this.loading = false;
+          this.loggedIn = true;
+          this.isLoggedIn$.next(this.loggedIn);
+
+          // Fetch user's profile info
+          this.Auth0.client.userInfo(this.accessToken, (err, profile) => {
+            if (err) {
+              throw err;
+            }
+            this.storage
+              .set("profile", profile)
+              .then(val => this.zone.run(() => (this.user = profile)));
+            resolve();
+          });
+        }
+      });
+    });
+
+    return promise;
+  }
+
+  logout() {
+    this.storage.remove("profile");
+    this.storage.remove("access_token");
+    this.storage.remove("expires_at");
+    this.storage.remove("id_token");
+    this.accessToken = null;
+    this.user = null;
+    this.loggedIn = false;
+    this.isLoggedIn$.next(this.loggedIn);
+  }
+}
 ```
+
+Let's first understand the properties of this Auth Service:
+
+* _accessToken_ : This is the JWT Token that we get from Auth0. We use it to authenticate user.
+* _user_ : This property holds the user data like email, firstname, lastname and so on.
+* _loggedIn_ : This boolean holds the authentication state of the user.
+* _isLoggedIn$_ : This is RxJS Subject. Think of this as Reactive version of _loggedIn_ property. We will use it in our Angular Component to get User's Authentication State.
+
+Now, let's take a look at methods of the service:
+
+* _constructor()_ : In constructor, we check if the user is previously authenticated or not. Based on it, we set the value of _this.user_ , _this.accessToken_ , _this.loggedIn_ based on it.
+
+* _login()_ : In login method, we authorize the user and if user is successfully authenticated, we fetch the profile information of the user. We save this information in the permanent storage via @ionic/store and also set appropriate properties of service to reflect the authentication state.
+
+* _logout()_ : In logout method, we remove all the user information from permanent storage and set the properties of service to reflect the logout state.
 
 ### Audio Player UI
 
@@ -557,7 +672,7 @@ Then we show the List of Media Files stored in our Google Cloud Database.
 <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
 <ng-container *ngFor="let file of files; let i = index">
 <ion-item text-wrap (click)="openFile(file, i)">
-<ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
+<ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name }}
 
 <p item-end *ngIf="currentFile.index === i">SELECTED</p>
 <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
@@ -605,79 +720,42 @@ And then we have playback controls using following HTML:
 This is how our complete UI is constructed:
 
 {% highlight html %}
-<ion-header>
-<ion-navbar color="primary">
-<ion-title>Audio Player</ion-title>
-<ion-buttons end>
-<button \*ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
-</ion-buttons>
-</ion-navbar>
-</ion-header>
-
-<ion-content padding>
-  <p *ngIf="auth.loading" text-center>Loading...</p>
-  <ng-template [ngIf]="!auth.loading || !loggedIn">
-    <div padding id="app-section" text-center>
-      <ion-icon color="primary" name="musical-notes"></ion-icon>
-      <h2 id="app-title">Audio Player</h2>
-      <button outline ion-button block color="primary" *ngIf="!loggedIn" (click)="login()">Log In</button>
-    </div>
-  </ng-template>
-  <!--<ion-list *ngIf="files.length">-->
-  <ion-list *ngIf="files.length && loggedIn">
-    <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
-    <ng-container *ngFor="let file of files; let i = index">
-      <ion-item text-wrap (click)="openFile(file, i)">
-        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
-        <p item-end *ngIf="currentFile.index === i">SELECTED</p>
-        <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
-      </ion-item>
-    </ng-container>
-  </ion-list>
-
-</ion-content>
-
-<!--<ion-footer *ngIf="currentFile.file" >-->
-
-<ion-footer \*ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
-<ion-toolbar color="primary">
-<ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
-name="seekbar">
-<ion-label color="light" range-left>{{ state.time }}</ion-label>
-<ion-label color="light" range-right>{{ state.duration }}</ion-label>
-</ion-range>
-
-  </ion-toolbar>
-  <ion-toolbar color="primary" padding>
-    <ion-grid>
-      <ion-row align-items-center id="media-controls">
-        <button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
-          <ion-icon color="light" name="skip-backward"> </ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
-          <ion-icon color="light" name="play"></ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
-          <ion-icon color="light" name="pause"></ion-icon>
-        </button>
-        <button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
-          <ion-icon color="light" name="skip-forward"></ion-icon>
-        </button>
-      </ion-row>
-    </ion-grid>
-
-  </ion-toolbar>
-</ion-footer>
 {% endhighlight %}
 
 #### Styling Player's UI
 
 ```scss
+page-home {
+  #app-section {
+    #app-title {
+      color: color($colors, "primary");
+      text-transform: uppercase;
+    }
+    ion-icon {
+      font-size: 15rem;
+    }
+  }
+  #media-controls {
+    button {
+      ion-icon {
+        font-size: 2.5rem;
+      }
+    }
+  }
+}
 ```
 
 #### Logic behind Audio UI
 
-We are using the default HomePage for Audio Player, that we get using **_ionic start_** command.
+Let's first understand the app flow in steps:
+
+1.  When App is opened, We will first check if user is authenticated or not.
+2.  If user is not authenticated, we will show Authentication UI.
+3.  After Authentication, We will fetch the media file from Google Cloud and show the Audio Player.
+4.  Now User can perform media action like play, pause or switch media file along with logging out of the application.
+5.  If User logout, we clear the authentication state from the storage and logout the user and show Login UI.
+
+We are using the default HomePage for Audio Player, that we get using **ionic start** command.
 
 In the constructor of HomePage, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call getDocuments Method.
 
@@ -692,7 +770,20 @@ constructor(...) {
 }
 ```
 
-This getDocuments method when called, show as nice Loader on screen using presentLoading method and fetch files via cloudProvider's getFiles method as shown below:
+If User is not logged In, we show a Login Button. When user clicks on it. It fires login method. We call Auth Service' Login method and Authenticate the User.
+
+```typescript
+login() {
+  this.auth.login().then(() => {
+      console.log("Successful Login");
+  })
+  .catch(error => {
+      console.log(error);
+  });
+}
+```
+
+When user is authenticated, getDocuments method is called. It shows as nice Loader on screen using presentLoading method and fetch files via cloudProvider's getFiles method as shown below:
 
 ```typescript
 getDocuments() {
@@ -704,7 +795,7 @@ getDocuments() {
 }
 ```
 
-In Ionic, we have lifecylehookso just like Angular. One such life cycle hook is _ionViewWillLoad_. We are listening all media events using NgRx store inside this lifecyclehook method.
+In Ionic, we have lifecylehooks just like Angular. One such life cycle hook is _ionViewWillLoad_. We are listening to changes in media state using NgRx store inside this lifecyclehook method.
 
 We are assigning the state of media to _this.state_ property.
 
@@ -736,7 +827,7 @@ resetState() {
 resetState method stop the currently running media file and dispatch **RESET** action to reset media state.
 
 Then playstream method fires playStream method of AudioProvider, which returns an Observable. We subscribe to that Observable and start listening Media Events like canplay, playing etc.
-Based on each particular event, we dispatch a store action with appropriate payload.
+Based on each particular event, we dispatch a store action with appropriate payload. Basically we are storing media information like, current time, duration of media and so on.
 
 ```typescript
 playStream(url) {
@@ -793,8 +884,8 @@ pause() {
 It's also true that, User also might want to replay the media again. For that we have a play method. It's important to not that we can't use playStream method here because it resets the media state and start playing audio file from beginning.
 
 ```typescript
-pause() {
-    this.audioProvider.pause();
+play() {
+    this.audioProvider.play();
 }
 ```
 
@@ -804,6 +895,201 @@ To stop the media, we have stop method, which calls the AudioProvider's stop met
 stop() {
     this.audioProvider.stop();
 }
+```
+
+We are treating all the files in Google Cloud as Playlist. So we have next method to play next track in the playlist.
+
+```typescript
+next() {
+  let index = this.currentFile.index + 1;
+  let file = this.files[index];
+  this.openFile(file, index);
+}
+```
+
+Similarly, We have previous method to play previous track.
+
+```typescript
+previous() {
+  let index = this.currentFile.index - 1;
+  let file = this.files[index];
+  this.openFile(file, index);
+}
+```
+
+We have a two helper methods to check if first or last track from playlist is playing.
+
+```typescript
+isFirstPlaying() {
+  return this.currentFile.index === 0;
+}
+
+isLastPlaying() {
+  return this.currentFile.index === this.files.length - 1;
+}
+```
+
+We allow user to do seek operation. When user initiate the seek operation, it fires onSeekStart method. In it, we check if file is currently being played or not and save that information. Then we pause the audio file.
+
+When seek operation ends we fire onSeekEnd method, and in it we seek to user's selected time. If file was being played before seeking, we resume the playback.
+
+```typescript
+onSeekStart() {
+  this.onSeekState = this.state.playing;
+  if (this.onSeekState) {
+    this.pause();
+  }
+}
+
+onSeekEnd(event) {
+  if (this.onSeekState) {
+    this.audioProvider.seekTo(event.value);
+    this.play();
+  } else {
+    this.audioProvider.seekTo(event.value);
+  }
+}
+```
+
+Finally we also allow user to logout via logout method.
+
+```typescript
+logout() {
+  this.reset();
+  this.auth.logout();
+}
+```
+
+#### Set up redirect
+
+We also need to handle the redirection after user is authenticated. We will do this in _app.component.ts_ file.
+
+```typescript
+import { Component } from "@angular/core";
+import { Platform } from "ionic-angular";
+import { StatusBar } from "@ionic-native/status-bar";
+import { SplashScreen } from "@ionic-native/splash-screen";
+
+// Import Auth0Cordova
+import Auth0Cordova from "@auth0/cordova";
+
+import { HomePage } from "../pages/home/home";
+@Component({
+  templateUrl: "app.html"
+})
+export class MyApp {
+  rootPage: any = HomePage;
+
+  constructor(
+    platform: Platform,
+    statusBar: StatusBar,
+    splashScreen: SplashScreen
+  ) {
+    platform.ready().then(() => {
+      statusBar.styleDefault();
+      splashScreen.hide();
+
+      // Redirect back to app after authenticating
+      (window as any).handleOpenURL = (url: string) => {
+        Auth0Cordova.onRedirectUri(url);
+      };
+    });
+  }
+}
+```
+
+#### Updating app.module.ts
+
+We need to important all the required libraries inside our app.module.ts file as shown below:
+
+```typescript
+import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { ErrorHandler, NgModule } from "@angular/core";
+import { HttpClientModule } from "@angular/common/http";
+import { JwtModule, JWT_OPTIONS } from "@auth0/angular-jwt";
+import { StoreModule } from "@ngrx/store";
+import { IonicApp, IonicErrorHandler, IonicModule } from "ionic-angular";
+import { SplashScreen } from "@ionic-native/splash-screen";
+import { StatusBar } from "@ionic-native/status-bar";
+
+import { mediaStateReducer } from "../providers/store/store";
+import { AudioProvider } from "../providers/audio/audio";
+import { CloudProvider } from "../providers/cloud/cloud";
+
+import { MyApp } from "./app.component";
+import { HomePage } from "../pages/home/home";
+import { AuthService } from "../providers/auth0/auth.service";
+import { IonicStorageModule, Storage } from "@ionic/storage";
+```
+
+We need a factory function to configure _angular-jwt_ library, as shown below. In the factory, we return an object with one method to get _access_token_ from storage and an array to add _whitelist_ domain.
+
+_angular-jwt_ will send the access_token to only whitelisted domains and will ignore rest of domains. In our case, whitelisted domain is our backend app domain.
+
+```typescript
+export function jwtOptionsFactory(storage) {
+  return {
+    tokenGetter: () => {
+      return storage.get("access_token");
+    },
+    whitelistedDomains: [
+      "wt-3a798f13259d542814174ba32c1e8bf1-0.sandbox.auth0-extend.com"
+    ]
+  };
+}
+```
+
+Then we add all the required _declarations_, _imports_, _providers_ in the NgModule as shown below. Take a closer look at how we configured NgRx's _StoreModule_ and _JwtModule_.
+
+```typescript
+@NgModule({
+  declarations: [MyApp, HomePage],
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    JwtModule.forRoot({
+      jwtOptionsProvider: {
+        provide: JWT_OPTIONS,
+        useFactory: jwtOptionsFactory,
+        deps: [Storage]
+      }
+    }),
+    IonicStorageModule.forRoot(),
+    StoreModule.forRoot({
+      appState: mediaStateReducer
+    }),
+    IonicModule.forRoot(MyApp)
+  ],
+  bootstrap: [IonicApp],
+  entryComponents: [MyApp, HomePage],
+  providers: [
+    StatusBar,
+    SplashScreen,
+    AudioProvider,
+    CloudProvider,
+    AuthService,
+    { provide: ErrorHandler, useClass: IonicErrorHandler }
+  ]
+})
+export class AppModule {}
+```
+
+#### Building and running the app
+
+You can directly run the app via following ionic command.
+
+For iOS app,
+
+```
+ $ ionic cordova run ios
+```
+
+For Android app,
+
+```
+$ ionic cordova run android
 ```
 
 ## Backend
