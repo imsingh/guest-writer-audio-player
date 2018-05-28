@@ -12,19 +12,7 @@ related:
 - 2017-11-15-an-example-of-all-possible-elements
 ---
 
-<!--
-**TL;DR:** Briefly describe what this article is about and what the reader will achieve/learn after reading it. Please
-also, provide the link to a GitHub repository that contains code related to this article.-->
-
-**TL;DR:** In this article, we'll implement an Audio player using **Angular** and **Ionic**. We will handle Audio Operations using **RxJS** _Observables_ and we'll also explore how we can manage application's state with **NgRx** inside an Angular application. We will also use **Auth0** for Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
-
-<!--## The Second Most Important Title
-
-Usually, we start describing again what this article is about. The difference, however, is that here we can explain with
-more words. Another important thing that we should include in this first paragraph is the name of the main technologies
-that we will talk about, and add a link to them. For example, we could say that we are going to use
-[React](https://reactjs.org/) and [Redux](https://redux.js.org/) to develop a simple
-[SPA (Single Page Application)](https://en.wikipedia.org/wiki/Single-page_application).-->
+**TL;DR:** In this article, we'll implement an Audio player using [**Angular**](https://angular.io) and [**Ionic**](https://ionic.io). We will handle Audio Operations using [**RxJS**](https://github.com/ReactiveX/rxjs) _Observables_ and we'll also explore how we can manage application's state with [**NgRx**](https://github.com/ngrx/platform) inside an Angular application. We will also use [**Auth0**](https://auth0.com) for Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
 
 ## Introduction
 
@@ -99,7 +87,7 @@ Now that we have our Auth0 app created. We need to create an Auth0 API. Which is
 
     a. Name: Choose any user friendly name to recognize API.
     b. Identifier: Choose any unique identifier for the API. It is recommend to use a URL, which is not publicly available. We need this Identifier later while coding the application.
-    c. Signing Algorithm: It should be RS256.
+    c. Signing Algorithm: It should be `RS256`.
 
 3.  Then press **Create**.
 
@@ -113,7 +101,7 @@ We need following information for our application:
 
 * _API Identifier_ : We need the Identifier value of API, that we have created. You will get it from API's setting page.
 
-#### Scaffolding the app
+### Scaffolding the app and Installing dependencies
 
 Let's scaffold an Ionic app using the blank template
 
@@ -805,7 +793,15 @@ this.store.select("appState").subscribe((value: any) => {
 });
 ```
 
-Whenever user clicks on the Media File. This function is fired. We prepare the media url in Google Cloud and fire playStream method with that _url_.
+Whenever user clicks on the Media File. *openFile* method is fired. We prepare the media url in Google Cloud and fire playStream method with that _url_.
+
+URL of media file looks like following:
+```https://storage.googleapis.com/${file.bucket}/${file.name}```
+
+*${file.bucket}* is the Google Cloud Bucket where file is stored.<br/>
+*${file.name}* is the name of the file.
+
+We get all this information from our backend.
 
 ```typescript
 openFile(file, index) {
@@ -1092,8 +1088,148 @@ For Android app,
 $ ionic cordova run android
 ```
 
+This is how app looks like:
+*Image here*
+
 ## Backend
+We are storing our Audio Files on Google Cloud Storage. We need to create Google Cloud Account and Configure it.
+
+### Create and configure Google Cloud
+1. Go to <https://cloud.google.com/> and Login with your Google Account.
+2. Open Google Cloud Console and then Create a New Project.
+3. Now we have to create a Service account key, which will allow our backend app to access Google Cloud Storage via Google APIs.
+   * Click on **APIs & Services** sidemenu and then click on **Credentials**. 
+   * Then click on **Create credentials** drop down and select **Service account key**.
+   * Fill Service Account Name and Select **Storage** > **Storage Object Viewer** as **Role**. It's very important, because we only need to fetch the list of media files. That's why we only need that Role.
+   * Select Key type as **JSON** and click on *Create*.
+4. It will download a *.json* file on your computer. Save this file somewhere secure, we need that for our backend.
+
+### Uploading Files on Google Cloud
+
+Now that we have configured our Google Cloud Storage. We need to upload files to Google Cloud Storage.
+
+1. In Google Cloud Dashboard, go to **Storage** > **Browser**.
+2. Create a New Bucket. Save the name of the bucket somewhere, we need it in our Backend app.
+3. Now upload the content to that bucket, that you want inside your Audio Player.
+4. Also make sure that your files are public.
+
+** Just for the sake of blog post, we are making it public. In general you would not want to do  that.**
 
 ### Accessing Google Cloud
+import the required dependencies as follows:
 
-### Securing Endpoint
+```javascript
+const express    = require('express');
+const Webtask    = require('webtask-tools');
+const bodyParser = require('body-parser');
+const Storage = require('@google-cloud/storage');
+const jwt = require('express-jwt');
+const jwtAuthz = require('express-jwt-authz');
+const jwks = require('jwks-rsa');
+```
+Now copy the content of Service Account Key *.json* file and assign it to following variable.
+
+```
+const apiKey = {...} // Service accont key here
+``` 
+
+Now create a config object with Google project id and this apiKey as follows:
+
+```javascript
+const config = {
+  projectId: 'GOOGLE_PROJECT_ID',
+  credentials: apiKey
+};
+```
+
+and create a Google Storage instance with our Google cloud storage bucket `name` as follows:
+
+```javascript
+// Google Storage
+const myAppStorage = Storage(config);
+const audio_bucket = myAppStorage.bucket('auth0-audio-app');
+```
+Here `auth0-audio-app` is the name of our bucket.
+
+Now configure Authentication in our application.
+
+```javascript
+const jwtCheck = jwt({
+    secret: jwks.expressJwtSecret({
+        cache: true,
+        rateLimit: true,
+        jwksRequestsPerMinute: 5,
+        jwksUri: "https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+    }),
+    audience: 'API_IDENTIFIER,
+    issuer: "https://{AUTH0_DOMAIN}/",
+    algorithms: ['RS256']
+});
+```
+Replace `{AUTH_DOMAIN}` with your Auth0 Domain and `API_IDENTIFIER` with your API Identifier(Audience) value.
+
+Now create express app and `/media` endpoint for getting media files in our mobile application.
+
+```javascript
+// Express application
+const app = express();
+
+app.use(bodyParser.json());
+
+app.get('/', function (req, res) {
+  res.sendStatus(200);
+});
+
+app.get('/media',jwtCheck, function(req, res) {
+   audio_bucket.getFiles({
+     delimiter: '/',
+     autoPaginate: false,
+     prefix: 'media/'
+  }, (err, files, nextQuery, apiResponse) => {
+    res.send({apiResponse: apiResponse});
+  });
+});
+```
+Basically, in /media route, we are fetching all the files from our Google Storage bucket and resending that back to our application. The response looks like following:
+
+```javascript
+{
+  apiResponse: {
+    kind: "storage#objects",
+    items: []
+  }
+}
+```
+Here is an example item:
+
+```javascript
+{
+  kind: "storage#object",
+  id: "auth0-audio-app/media/01 Jhoolay Laal.mp3/1523854489009243",
+  selfLink: "https://www.googleapis.com/storage/v1/b/auth0-audio-app/o/media%2F01%20Jhoolay%20Laal.mp3",
+  name: "media/01 Jhoolay Laal.mp3",
+  bucket: "auth0-audio-app",
+  generation: "1523854489009243",
+  metageneration: "2",
+  contentType: "audio/mp3",
+  timeCreated: "2018-04-16T04:54:48.993Z",
+  updated: "2018-04-16T06:21:53.045Z",
+  storageClass: "MULTI_REGIONAL",
+  timeStorageClassUpdated: "2018-04-16T04:54:48.993Z",
+  size: "16570328",
+  md5Hash: "kA6qr0i42l2sS+XD7rL8PQ==",
+  mediaLink: "https://www.googleapis.com/download/storage/v1/b/auth0-audio-app/o/media%2F01%20Jhoolay%20Laal.mp3?generation=1523854489009243&alt=media",
+  crc32c: "qlnTOg==",
+  etag: "CNv4hqyAvtoCEAI="
+},
+```
+
+
+Finally export the app as follows, which is required for Webtask:
+
+```javascript
+module.exports = Webtask.fromExpress(app);
+```
+
+In the bottom of the Webtask Editor, you can check the URL of the webtask.
+In this case it is *url*
