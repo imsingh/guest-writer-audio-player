@@ -26,22 +26,26 @@ Secondly, we will also create a very small backend using **NodeJS** and **Google
 
 #### Prerequisites
 
-Since we are going to make a mobile application. We need to have the required SDKs for building the app. We are using Cordova to package our Ionic app into Native Package.
+Since we are going to make a mobile application. We need to have the required SDKs for building the app. We will use Cordova to package our Ionic app into Native Packages.
 
 * Install the Native sdks for building application.
 
-  * For iOS applications, you need to install Xcode. It's important to keep in mind that, you need macOS to install Xcode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). After you install Xcode, you also need some command-line tools and ios-deploy tool to run simulator. You can install these as follows:
+  * For iOS applications, we need to install Xcode. It's important to keep in mind that, you need macOS to install Xcode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). After you install Xcode, you also need some command-line tools and ios-deploy tool to run simulator. We can install these as follows:
     * From command line, run this command: ` $ xcode-select --install`, to install xcode command-line tool
     * and run, `$ npm install -g ios-deploy`, to install ios-deploy tool.
 
-  * For Android applications, you need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements). You need to do following things:
-    * JDK: You need to have JDK installed and also have to set `JAVA_HOME` environment variable according to your JDK installation.
-    * Gradle: Gradle is also required for using cordova. Install gradle and also add it your `PATH` variable in environment variables.
-    * Android SDK: Mostly importantly, you need Android SDKs to make apk file from cordova project. Install **Android Studio** and using `sdkmanager` install Anrdoid Platform SDK, build-tools for that SDK version and Android Support Repository. You also have to set `ANDROID_HOME` environment variable to your Android SDK location. It's also recommended to add Android SDK's `tools`, `tools/bin` and `platform-tools` directories to `PATH` variable.
+  * For Android applications, we need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements). We need to do following things:
+    * JDK: We need to have JDK installed and also have to set `JAVA_HOME` environment variable according to JDK installation.
+    * Gradle: Gradle is also required for using cordova. Install gradle and also add it `PATH` variable in environment variables.
+    * Android SDK: Most importantly, we need Android SDKs to make apk file from cordova project. Install **Android Studio** and using `sdkmanager` install 
+        1. Anrdoid Platform SDK, 
+        2. build-tools for that SDK version and 
+        3. Android Support Repository. 
+    * We have to set `ANDROID_HOME` environment variable to Android SDK location. It's also recommended to add Android SDK's `tools`, `tools/bin` and `platform-tools` directories to `PATH` variable.
 
-* You also need to install NodeJS. Go to <https://nodejs.org/en/download/> and download the package depending on your development machine.
+* Then we need to install NodeJS. Go to <https://nodejs.org/en/download/> and download the package depending on the development machine.
 
-* You need to install Cordova CLI and Ionic CLI via npm.
+* We need to install Cordova CLI and Ionic CLI via npm.
 
 ```
 $ npm install -g ionic cordova
@@ -49,7 +53,7 @@ $ npm install -g ionic cordova
 
 ### Auth0 Configuration
 
-We are going to secure our app and backend api with Auth0. For that we need to create an Auth0 App and create an Auth0 API. Let's do it.
+We are going to secure our app and backend api with [Auth0](https://auth0.com). For that we need to create an Auth0 App and create an Auth0 API. Let's do it.
 
 #### Creating Auth0 Account
 
@@ -140,8 +144,9 @@ $ npm install --save @angular/animations @ngrx/store moment auth0-js @auth0/cord
 We also need to install cordova plugins for authentication using auth0.
 
 ```
-# replace {YOUR_PACKAGE_ID} with your app identifier and YOUR_AUTH0_DOMAIN with your Auth0 Domain
-ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST=YOUR_AUTH0_DOMAIN --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
+# replace {YOUR_PACKAGE_ID} with your app identifier and 
+# replace YOUR_AUTH0_DOMAIN with your Auth0 Domain
+$ ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST=YOUR_AUTH0_DOMAIN --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
 $ ionic cordova plugin add cordova-plugin-safariviewcontroller
 ```
 
@@ -154,15 +159,15 @@ Observable is the central piece of code for our application. RxJS comes with hel
 
 It takes an _Observer_ object and returns a function.
 
-Observer object has three methods on it : 'next', 'error' and 'complete'.
+Observer object has three methods on it : *next*, *error* and *complete*.
 
-1.  To emit value, we call observer.next method with the value.
-2.  In case of an error, we fire the observer.error with error and observable ends.
-3.  If we are done with observer and there is no value to emit, we call observer.complete method.
+1.  To emit value, we call `observer.next` method with the value.
+2.  In case of an error, we fire the `observer.error` with error and observable ends.
+3.  If we are done with observer and there is no value to emit, we call `observer.complete` method.
 
 We also return a function inside Observable, which is called when Observable is unsubscribed. So can we do the clean up of our Observable in that function.
 
-We are gonna be using this observable to notify about Media Events like playing, pause, timeupdate and so on. So basically, we will listen to the media event's of Audio() inside the observable and then notify it via observer.next method.
+We are gonna be using this observable to notify about Media Events like playing, pause, timeupdate and so on. So basically, we will listen to the media event's of Audio() inside the observable and then notify it via `observer.next` method.
 
 Let's first create an Audio Service using Ionic CLI
 
@@ -222,7 +227,7 @@ export class AudioProvider {
  
 ```
 
-Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via playStream() method. It looks like following:
+Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via `playStream()` method. It looks like following:
 
 ```typescript
 // ... import statements
@@ -267,6 +272,7 @@ export class AudioProvider {
 ```
 
 **stop Method**
+
 In stop method, we call Audio() object's `stop` method to stop the playback.
 
 ```typescript
@@ -392,7 +398,7 @@ We have all our files in the Google Cloud Storage. We access Google Cloud Storag
 
 #### Cloud Service
 
-We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_
+We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_. We are doing this because, Google Cloud Sends back one extra dummy entry with that particular `contentType`, which we don't need.
 
 Create a file named `cloud.ts` inside `/src/provider/cloud/` and do the following:
 
@@ -427,11 +433,11 @@ In this application, we are using NgRx to manage the state of our application. N
 
 Let's briefly understand redux.
 
-In Redux, we manage our state in one place. In other words, we have just one object which stores/saves the state of our application. If at any point, we want to update the state, we `dispatch` and `Action` to a function, called as reducer function. This reducer function than update the state based on the action type.
+In Redux, we manage our state in one place. In other words, we have just one object which stores/saves the state of our application. If at any point, we want to update the state, we `dispatch` an `Action` to a function, called as `reducer` function. This reducer function than update the state based on the action type.
 
 #### Creating Reducer
 
-By default, NgRx Action only has type property. But we need to send some information along with the type of action. So, We are going to extend the NgRx Action to suit our needs. We will name it _MediaAction_.
+By default, NgRx `Action` only has `type` property. But we need to send some information along with the type of action. So, We are going to extend the NgRx Action to suit our needs. We will name it _MediaAction_.
 
 Let's create a file `store.ts` in `/src/providers/store/` folder and do the following:
 
@@ -443,7 +449,7 @@ export interface MediaAction extends Action {
 }
 ```
 
-Then we need the action type for Media Events like canplay, playing and so on. Here is how we do it.
+Then we need the create different action for Media Events like canplay, playing and so on. Here is how we do it.
 
 ```typescript
 import { Action } from "@ngrx/store";
@@ -457,7 +463,7 @@ export const LOADSTART = "LOADSTART";
 export const RESET = "RESET";
 ```
 
-And Finally, we need a reducer function which recieves the action and do state update based on type of the action.
+And Finally, we need a reducer function which recieves the `action` and do state update based on type of the action.
 
 ```typescript
 import { Action } from "@ngrx/store";
@@ -502,7 +508,7 @@ export function mediaStateReducer(state: any, action: MediaAction) {
 }
 ```
 
-Within each case, we are updating the state. It's also important to remember that, NgRx works with immutable object. In other words, each time reducer function is called, we need to create a new state object with the updated state. In our case, we are using Object.assign to create a new object.
+Within each case, we are updating the `state`. It's also important to remember that, NgRx works with `immutable` object. In other words, each time reducer function is called, we need to create a new state object with the updated state. In our case, we are using `Object.assign` to create a new object.
 
 #### Configuring StoreModule
 
@@ -514,7 +520,7 @@ StoreModule.forRoot({
 }),
 ```
 
-You can now access the state using **appState** key anywhere in the application.
+You can now access the state using `appState` key anywhere in the application.
 
 ### Authentication
 
@@ -675,7 +681,7 @@ On the top we have a Navbar which contains the name of application and Logout bu
 </ion-header>
 {% endhighlight %}
 
-Then we have `ion-content` with Login button with App's Logo and list of media files as shown below:
+Then we have `ion-content` with Login button, App's Logo and list of media files. To also greet our user with `Hello` along with his/her *username*.
 {% highlight html %}
 <!-- /src/pages/home/home.html -->
 <!--... ion-header-->
@@ -880,7 +886,7 @@ We are creating `page-home` component using Angular's `@Component` decorator. To
 })
 export class HomePage {}
 ```
-In the constructor of HomePage, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call getDocuments Method.
+In the constructor of `HomePage`, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call `getDocuments` Method.
 
 ```typescript
 // import statements
@@ -896,7 +902,7 @@ export class HomePage {
 }
 ```
 
-If User is not logged In, we show a Login Button. When user clicks on it. It fires login method. We call Auth Service' Login method and Authenticate the User.
+If User is not logged In, we show a Login Button. When user clicks on it. It fires `login` method. We call Auth Service' Login method and Authenticate the User.
 
 ```typescript
 // import statements
@@ -914,7 +920,7 @@ export class HomePage {
 }
 ```
 
-When user is authenticated, getDocuments method is called. It shows as nice Loader on screen using presentLoading method and fetch files via cloudProvider's getFiles method as shown below:
+When user is authenticated, `getDocuments` method is called. It shows as nice Loader on screen using `presentLoading` method and fetch files via cloudProvider's `getFiles` method as shown below:
 
 ```typescript
 // import statements
@@ -930,9 +936,9 @@ export class HomePage {
 }
 ```
 
-In Ionic, we have lifecylehooks just like Angular. One such life cycle hook is _ionViewWillLoad_. We are listening to changes in media state using NgRx store inside this lifecyclehook method.
+In Ionic, we have lifecylehooks just like Angular. One such life cycle hook is `ionViewWillLoad`. We are listening to changes in media state using NgRx store inside this lifecyclehook method.
 
-We are assigning the state of media to _this.state_ property. We also update the `ion-content` if we are displaying ion-footer using `canplay` value. Along with that, we update seekbar based on media's `currentTime`.
+We are assigning the state of media to `this.state` property. We also update the `ion-content` if we are displaying ion-footer using `canplay` value. Along with that, we update seekbar based on media's `currentTime`.
 
 ```typescript
 // import statements
@@ -967,13 +973,13 @@ export class HomePage {
   }
 ```
 
-Whenever user clicks on the Media File. *openFile* method is fired. We prepare the media url in Google Cloud and fire playStream method with that _url_.
+Whenever user clicks on the Media File. `openFile` method is fired. We prepare the media url in Google Cloud and fire playStream method with that `url`.
 
 URL of media file looks like following:
 ```https://storage.googleapis.com/${file.bucket}/${file.name}```
 
-*${file.bucket}* is the Google Cloud Bucket where file is stored.<br/>
-*${file.name}* is the name of the file.
+`${file.bucket}` is the Google Cloud Bucket where file is stored.<br/>
+`${file.name}` is the name of the file.
 
 We get all this information from our <a href="#cloud-response" target="_self">backend</a>.
 
@@ -989,7 +995,7 @@ export class HomePage {
 }
 ```
 
-This playStream method first reset the current media state via resetState method.
+This `playStream` method first reset the current media state via `resetState` method.
 
 ```typescript
 // import statements
@@ -1002,9 +1008,9 @@ export class HomePage {
 }
 ```
 
-resetState method stop the currently running media file and dispatch `RESET` action to reset media state.
+`resetState` method stop the currently running media file and dispatch `RESET` action to reset media state.
 
-Then playstream method fires playStream method of AudioProvider, which returns an Observable. We subscribe to that Observable and start listening Media Events like canplay, playing etc.
+Then `playstream` method fires playStream method of `AudioProvider`, which returns an Observable. We subscribe to that Observable and start listening Media Events like canplay, playing etc.
 Based on each particular event, we dispatch a store action with appropriate payload. Basically we are storing media information like, current time, duration of media and so on.
 
 ```typescript
@@ -1055,7 +1061,7 @@ export class HomePage {
 }
 ```
 
-So once playStream method is fired, media playback is initiated. User might want to pause the playback. For that we have pause method which basically calls AudioProvider's pause method.
+So once `playStream` method is fired, media playback is initiated. User might want to pause the playback. For that we have `pause` method which basically calls AudioProvider's pause method.
 
 ```typescript
 // import statements
@@ -1067,7 +1073,7 @@ export class HomePage {
 }
 ```
 
-It's also true that, User also might want to replay the media again. For that we have a play method. It's important to not that we can't use playStream method here because it resets the media state and start playing audio file from beginning.
+It's also true that, User also might want to replay the media again. For that we have a `play` method. It's important to not that we can't use playStream method here because it resets the media state and start playing audio file from beginning.
 
 ```typescript
 // import statements
@@ -1079,7 +1085,7 @@ export class HomePage {
 }
 ```
 
-To stop the media, we have stop method, which calls the AudioProvider's stop method to stop media playback.
+To stop the media, we have `stop` method, which calls the AudioProvider's stop method to stop media playback.
 
 ```typescript
 // import statements
@@ -1091,7 +1097,7 @@ export class HomePage {
 }
 ```
 
-We are treating all the files in Google Cloud as Playlist. So we have next method to play next track in the playlist.
+We are treating all the files in Google Cloud as Playlist. So we have `next` method to play next track in the playlist.
 
 ```typescript
 // import statements
@@ -1105,7 +1111,7 @@ export class HomePage {
 }
 ```
 
-Similarly, We have previous method to play previous track.
+Similarly, We have `previous` method to play previous track.
 
 ```typescript
 // import statements
@@ -1135,9 +1141,9 @@ export class HomePage {
 }
 ```
 
-We allow user to do seek operation. When user initiate the seek operation, it fires onSeekStart method. In it, we check if file is currently being played or not and save that information. Then we pause the audio file.
+We allow user to do seek operation. When user initiate the seek operation, it fires `onSeekStart` method. In it, we check if file is currently being played or not and save that information. Then we pause the audio file.
 
-When seek operation ends we fire onSeekEnd method, and in it we seek to user's selected time. If file was being played before seeking, we resume the playback.
+When seek operation ends we fire `onSeekEnd` method, and in it we seek to user's selected time. If file was being played before seeking, we resume the playback.
 
 ```typescript
 // import statements
@@ -1161,7 +1167,7 @@ export class HomePage {
 }
 ```
 
-Finally we also allow user to logout via logout method. Along with that we have `reset` method to reset whole appliation.
+Finally we also allow user to logout via `logout` method. Along with that we have `reset` method to reset whole appliation.
 
 ```typescript
 // import statements
@@ -1181,7 +1187,7 @@ export class HomePage {
 
 #### Set up redirect
 
-We also need to handle the redirection after user is authenticated. We will do this in _app.component.ts_ file.
+We also need to handle the redirection after user is authenticated. We will do this in `app.component.ts` file.
 
 ```typescript
 import { Component } from "@angular/core";
@@ -1242,9 +1248,9 @@ import { AuthService } from "../providers/auth0/auth.service";
 import { IonicStorageModule, Storage } from "@ionic/storage";
 ```
 
-We need a factory function to configure _angular-jwt_ library, as shown below. In the factory, we return an object with one method to get _access_token_ from storage and an array to add _whitelist_ domain.
+We need a factory function to configure `angular-jwt` library, as shown below. In the factory, we return an object with one method to get `access_token` from storage and an array to add `whitelist` domain.
 
-_angular-jwt_ will send the access_token to only whitelisted domains and will ignore rest of domains. In our case, whitelisted domain is our backend app domain.
+`angular-jwt` will send the `access_token` to only whitelisted domains and will ignore rest of domains. In our case, whitelisted domain is our backend app domain.
 
 ```typescript
 // ... import statements
@@ -1260,7 +1266,7 @@ export function jwtOptionsFactory(storage) {
 }
 ```
 
-Then we add all the required _declarations_, _imports_, _providers_ in the NgModule as shown below. Take a closer look at how we configured NgRx's _StoreModule_ and _JwtModule_.
+Then we add all the required `declarations`, `imports`, `providers` in the NgModule as shown below. Take a closer look at how we configured `JwtModule`.
 
 ```typescript
 // ... import statements
@@ -1342,10 +1348,15 @@ Now that we have configured our Google Cloud Storage. We need to upload files to
 > For the sake of blog post, we are making our media files public. In general you wouldn't want to do that.
 
 ### Accessing Google Cloud
-We are going to use Webtask to create our backend. It's fairly simple to use it. Login at <https://webtask.io> and in sidemenu click on + icon to create a new webtask.
+We are going to use Webtask to create our backend. It's fairly simple to use it. Login at <https://webtask.io> and in sidemenu click on **+** icon to create a new webtask.
 Then, it will open Webtask Editor for you. We will write our code using that editor.
 
-First, import the required libraries as follows:
+First we will add all the required Node Modules to our Webtask as follows:
+
+* On the top left of the webtask Editor, you will see a small wrench icon like this <img src="data:image/svg+xml;utf8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pgo8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMTguMC4wLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogNi4wMCBCdWlsZCAwKSAgLS0+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiBpZD0iQ2FwYV8xIiB4PSIwcHgiIHk9IjBweCIgdmlld0JveD0iMCAwIDMwMy40NzcgMzAzLjQ3NyIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzAzLjQ3NyAzMDMuNDc3OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgd2lkdGg9IjE2cHgiIGhlaWdodD0iMTZweCI+CjxwYXRoIGQ9Ik0yOTguNjA0LDY0LjIwOWwtNDkuOTc4LDQ5Ljk3OUwyMDQuOTA3LDk4LjU3TDE4OS4yOSw1NC44NTJsNDkuOTc5LTQ5Ljk3OWMtMzIuNzkxLTEwLjk3LTcwLjQxOC0zLjQyLTk2LjUyOSwyMi42OTIgIGMtMjUuNjI5LDI1LjYyOS0zMy4zNzMsNjIuMzQ5LTIzLjI4MSw5NC43MDRjLTEuMzU5LDEuMDctMi42NzYsMi4yMjItMy45MywzLjQ3NkwxMi44ODQsMjI4LjM4OSAgYy0xNy4xNzgsMTcuMTc3LTE3LjE3OCw0NS4wMjcsMCw2Mi4yMDVjMTcuMTc4LDE3LjE3OCw0NS4wMjksMTcuMTc4LDYyLjIwNywwbDEwMi42NDUtMTAyLjY0NWMxLjI1NC0xLjI1NCwyLjQwNC0yLjU3LDMuNDc1LTMuOTI5ICBjMzIuMzU1LDEwLjA5Miw2OS4wNzQsMi4zNDcsOTQuNzAzLTIzLjI4MkMzMDIuMDI0LDEzNC42MjYsMzA5LjU3NSw5Ny4wMDEsMjk4LjYwNCw2NC4yMDl6IiBmaWxsPSIjMDAwMDAwIi8+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+Cjwvc3ZnPgo=" />. Click on it and it will open a drop down menu.
+* Now click on `NPM Modules`. It will be open a pane in left side of editor. Add the following modules using that pane : `express`, `body-parser`, `webtask-tools`, `@google-cloud/storage`, `express-jwt`, `express-jwt-authz` and `jwks-rsa`.
+
+Let's write our code in the editor now. First, import the required libraries in the editor as follows:
 
 ```javascript
 const express = require('express');
@@ -1363,7 +1374,7 @@ Now copy the content of Service Account Key *.json* file and assign it to follow
 const apiKey = {...} // Service accont key here
 ``` 
 
-Now create a config object with Google project id and this apiKey as follows:
+Now create a `config` object with Google project id and this `apiKey` as follows:
 
 ```javascript
 // ... require libraries
@@ -1422,7 +1433,7 @@ app.get('/media',jwtCheck, function(req, res) {
   });
 });
 ```
-Basically, in /media route, we are fetching all the files from our Google Storage bucket and resending that back to our application. The response looks like following:
+Basically, in `/media` route, we are fetching all the files from our Google Storage bucket and sending that to our application. The response looks like following:
 
 ```javascript
 {
@@ -1464,4 +1475,4 @@ Finally export the app as follows, which is required for Webtask:
 module.exports = Webtask.fromExpress(app);
 ```
 
-In the bottom of the Webtask Editor, you can check the URL of the webtask.
+In the bottom of the Webtask Editor, you can check the URL of the webtask, that we need in our Frontend application.
