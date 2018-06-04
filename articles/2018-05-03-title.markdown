@@ -31,16 +31,17 @@ Since we are going to make a mobile application. We need to have the required SD
 * Install the Native sdks for building application.
 
   * For iOS applications, we need to install Xcode. It's important to keep in mind that, you need macOS to install Xcode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). After you install Xcode, you also need some command-line tools and ios-deploy tool to run simulator. We can install these as follows:
-    * From command line, run this command: ` $ xcode-select --install`, to install xcode command-line tool
+
+    * From command line, run this command: `$ xcode-select --install`, to install xcode command-line tool
     * and run, `$ npm install -g ios-deploy`, to install ios-deploy tool.
 
   * For Android applications, we need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements). We need to do following things:
     * JDK: We need to have JDK installed and also have to set `JAVA_HOME` environment variable according to JDK installation.
     * Gradle: Gradle is also required for using cordova. Install gradle and also add it `PATH` variable in environment variables.
-    * Android SDK: Most importantly, we need Android SDKs to make apk file from cordova project. Install **Android Studio** and using `sdkmanager` install 
-        1. Anrdoid Platform SDK, 
-        2. build-tools for that SDK version and 
-        3. Android Support Repository. 
+    * Android SDK: Most importantly, we need Android SDKs to make apk file from cordova project. Install **Android Studio** and using `sdkmanager` install
+      1.  Anrdoid Platform SDK,
+      2.  build-tools for that SDK version and
+      3.  Android Support Repository.
     * We have to set `ANDROID_HOME` environment variable to Android SDK location. It's also recommended to add Android SDK's `tools`, `tools/bin` and `platform-tools` directories to `PATH` variable.
 
 * Then we need to install NodeJS. Go to <https://nodejs.org/en/download/> and download the package depending on the development machine.
@@ -87,7 +88,7 @@ Set the callback url in **Allowed Callback URLs** Box as follows:
 YOUR_PACKAGE_ID://YOUR_AUTH_DOMAIN/cordova/YOUR_PACKAGE_ID/callback
 ```
 
-> YOUR_PACKAGE_ID or app package ID or app Identifier is a string to uniquely identify the app on device and in Apple App Store and Google Play Store. It looks something like this,  *com.example.app*. You can get or set this inside `config.xml` file in your project.
+> YOUR_PACKAGE_ID or app package ID or app Identifier is a string to uniquely identify the app on device and in Apple App Store and Google Play Store. It looks something like this, _com.example.app_. You can get or set this inside `config.xml` file in your project.
 
 #### Creating an API
 
@@ -122,8 +123,8 @@ $ ionic start audio-player blank
 
 It will create a directory named `audio-player` in current directory and download `blank` starter project inside it. Along with that, CLI will ask you couple of questions as follows:
 
-1. Would you like to integrate your new app with Cordova to target native iOS and Android? (y/N): Press **y**, since we are going to build app for Mobile Devices. 
-2. Install the free Ionic Pro SDK and connect your app? (Y/n): Press **n** because we don't really need to use Ionic Pro feature for this tutorial.
+1.  Would you like to integrate your new app with Cordova to target native iOS and Android? (y/N): Press **y**, since we are going to build app for Mobile Devices.
+2.  Install the free Ionic Pro SDK and connect your app? (Y/n): Press **n** because we don't really need to use Ionic Pro feature for this tutorial.
 
 #### Installing Dependencies
 
@@ -144,7 +145,7 @@ $ npm install --save @angular/animations @ngrx/store moment auth0-js @auth0/cord
 We also need to install cordova plugins for authentication using auth0.
 
 ```
-# replace {YOUR_PACKAGE_ID} with your app identifier and 
+# replace {YOUR_PACKAGE_ID} with your app identifier and
 # replace YOUR_AUTH0_DOMAIN with your Auth0 Domain
 $ ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST=YOUR_AUTH0_DOMAIN --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
 $ ionic cordova plugin add cordova-plugin-safariviewcontroller
@@ -159,7 +160,7 @@ Observable is the central piece of code for our application. RxJS comes with hel
 
 It takes an _Observer_ object and returns a function.
 
-Observer object has three methods on it : *next*, *error* and *complete*.
+Observer object has three methods on it : _next_, _error_ and _complete_.
 
 1.  To emit value, we call `observer.next` method with the value.
 2.  In case of an error, we fire the `observer.error` with error and observable ends.
@@ -204,7 +205,7 @@ export class AudioProvider {
   }
 ```
 
-Since we are going to listen to many media events. It's not ideal to use `addEventListener` and `removeEventListener` multiple times. Let's add some helper functions **inside** the Observable to add and remove event listeners in a bit elegant way. Both these functions, `addEvents` and `removeEvents` take array of *events* as input.
+Since we are going to listen to many media events. It's not ideal to use `addEventListener` and `removeEventListener` multiple times. Let's add some helper functions **inside** the Observable to add and remove event listeners in a bit elegant way. Both these functions, `addEvents` and `removeEvents` take array of _events_ as input.
 
 ```typescript
 // ... import statements
@@ -224,7 +225,7 @@ export class AudioProvider {
     };
     //...Observable creation here
   }
- 
+
 ```
 
 Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via `playStream()` method. It looks like following:
@@ -234,7 +235,7 @@ Whenever we want to play a new audio file. We want to create this observable and
 export class AudioProvider {
   // ... constructors and other methods
   playStream(url) {
-      return this.streamObservable(url).pipe(takeUntil(this.stop$));
+    return this.streamObservable(url).pipe(takeUntil(this.stop$));
   }
 }
 ```
@@ -252,7 +253,7 @@ In play method, we call Audio() object's `play` method, to play the file when it
 export class AudioProvider {
   // ... constructors and other methods
   play() {
-      this.audioObj.play();
+    this.audioObj.play();
   }
 }
 ```
@@ -266,7 +267,7 @@ In pause method, we call Audio() object's `pause` method to pause the audio play
 export class AudioProvider {
   // ... constructors and other methods
   pause() {
-      this.audioObj.pause();
+    this.audioObj.pause();
   }
 }
 ```
@@ -280,7 +281,7 @@ In stop method, we call Audio() object's `stop` method to stop the playback.
 export class AudioProvider {
   // ... constructors and other methods
   stop() {
-      this.stop$.next();
+    this.stop$.next();
   }
 }
 ```
@@ -294,7 +295,7 @@ seekTo method takes seconds as input and change the current time of audio playba
 export class AudioProvider {
   // ... constructors and other methods
   seekTo(seconds) {
-      this.audioObj.currentTime = seconds;
+    this.audioObj.currentTime = seconds;
   }
 }
 ```
@@ -350,9 +351,17 @@ export class AudioProvider {
 
   private streamObservable(url) {
     let events = [
-      "ended", "error", "play", "playing", "pause", "timeupdate", "canplay", "loadedmetadata", "loadstart"
+      "ended",
+      "error",
+      "play",
+      "playing",
+      "pause",
+      "timeupdate",
+      "canplay",
+      "loadedmetadata",
+      "loadstart"
     ];
-  
+
     const addEvents = function(obj, events, handler) {
       events.forEach(event => {
         obj.addEventListener(event, handler);
@@ -360,10 +369,10 @@ export class AudioProvider {
     };
 
     const removeEvents = function(obj, events, handler) {
-      events.forEach(event => { 
+      events.forEach(event => {
         obj.removeEventListener(event, handler);
       });
-    }
+    };
 
     return Observable.create(observer => {
       // Play audio
@@ -372,7 +381,7 @@ export class AudioProvider {
       this.audioObj.play();
 
       // Media Events
-      const handler = (event) => observer.next(event);
+      const handler = event => observer.next(event);
       addEvents(this.audioObj, events, handler);
 
       return () => {
@@ -425,6 +434,7 @@ export class CloudProvider {
   }
 }
 ```
+
 _url_ in this case is the url of our Node App.
 
 ### Managing Application State
@@ -666,11 +676,15 @@ Our Application will look like following image.
 <!--Image here -->
 
 #### Audio Player HTML
+
 We have `home.html` file inside `/src/pages/home/` folder. We will add HTML of our player in it.
 
 On the top we have a Navbar which contains the name of application and Logout button. This logout button will be shown if user is logged in.
 {% highlight html %}
+{% raw %}
+
 <!-- /src/pages/home/home.html -->
+
 <ion-header>
   <ion-navbar color="primary">
     <ion-title>Audio Player</ion-title>
@@ -679,10 +693,13 @@ On the top we have a Navbar which contains the name of application and Logout bu
     </ion-buttons>
   </ion-navbar>
 </ion-header>
+{% endraw %}
 {% endhighlight %}
 
-Then we have `ion-content` with Login button, App's Logo and list of media files. To also greet our user with `Hello` along with his/her *username*.
+Then we have `ion-content` with Login button, App's Logo and list of media files. To also greet our user with `Hello` along with his/her _username_.
+
 {% highlight html %}
+{% raw %}
 <!-- /src/pages/home/home.html -->
 <!--... ion-header-->
 <ion-content padding>
@@ -707,12 +724,15 @@ Then we have `ion-content` with Login button, App's Logo and list of media files
   </ion-list>
 
 </ion-content>
+{% endraw %}
 {% endhighlight %}
 
 In the footer of our Ionic Application, we have two `ion-toolbar`.
 
 In the first `ion-toolbar`, we have a seekbar created with ion-range. It allows user to change the current time of playing audio file. Here is HTML for that :
 {% highlight html %}
+{% raw %}
+
 <!-- ... ion-header and ion-content -->
 <ion-footer>
  <ion-toolbar color="primary">
@@ -724,11 +744,14 @@ In the first `ion-toolbar`, we have a seekbar created with ion-range. It allows 
   </ion-toolbar>
 <!--Other components-->
 </ion-footer>
+{% endraw %}
 {% endhighlight %}
 
 And then we have rest of playback controls inside another `ion-toolbar`, as follows:
 
 {% highlight html %}
+{% raw %}
+
 <!-- ... ion-header and ion-content -->
 <ion-footer>
 <!-- ... Seekbar control here-->
@@ -752,11 +775,14 @@ And then we have rest of playback controls inside another `ion-toolbar`, as foll
 
   </ion-toolbar>
 </ion-footer>
+{% endraw %}
 {% endhighlight %}
 
 This is how our complete UI is constructed:
 
 {% highlight html %}
+{% raw %}
+
 <!-- /src/pages/home/home.html -->
 <ion-header>
   <ion-navbar color="primary">
@@ -820,9 +846,11 @@ This is how our complete UI is constructed:
 
   </ion-toolbar>
 </ion-footer>
+{% endraw %}
 {% endhighlight %}
 
 #### Styling Player's UI
+
 Just to improve look and feel of our app. We will do some minor styling in `home.scss` file placed inside `/src/pages/home/` directory as shown below:
 
 ```scss
@@ -861,7 +889,7 @@ We are using the default HomePage for Audio Player, that we get using `ionic sta
 We are creating `page-home` component using Angular's `@Component` decorator. To enhance the User experience we have added tiny animations when audio player goes from `inactive` to `active` state. Basically, when user starts playing the audio file. We show music controls to the user.
 
 ```typescript
-// ... import statements 
+// ... import statements
 @Component({
   selector: "page-home",
   templateUrl: "home.html",
@@ -886,6 +914,7 @@ We are creating `page-home` component using Angular's `@Component` decorator. To
 })
 export class HomePage {}
 ```
+
 In the constructor of `HomePage`, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call `getDocuments` Method.
 
 ```typescript
@@ -909,12 +938,14 @@ If User is not logged In, we show a Login Button. When user clicks on it. It fir
 export class HomePage {
   // ...constructor here
   login() {
-    this.auth.login().then(() => {
+    this.auth
+      .login()
+      .then(() => {
         console.log("Successful Login");
-    })
-    .catch(error => {
+      })
+      .catch(error => {
         console.log(error);
-    });
+      });
   }
   // ... other methods
 }
@@ -927,11 +958,11 @@ When user is authenticated, `getDocuments` method is called. It shows as nice Lo
 export class HomePage {
   // ...constructor and other methods
   getDocuments() {
-      let loader = this.presentLoading();
-      this.cloudProvider.getFiles().subscribe(files => {
-        this.files = files;
-        loader.dismiss();
-      });
+    let loader = this.presentLoading();
+    this.cloudProvider.getFiles().subscribe(files => {
+      this.files = files;
+      loader.dismiss();
+    });
   }
 }
 ```
@@ -976,7 +1007,7 @@ export class HomePage {
 Whenever user clicks on the Media File. `openFile` method is fired. We prepare the media url in Google Cloud and fire playStream method with that `url`.
 
 URL of media file looks like following:
-```https://storage.googleapis.com/${file.bucket}/${file.name}```
+`https://storage.googleapis.com/${file.bucket}/${file.name}`
 
 `${file.bucket}` is the Google Cloud Bucket where file is stored.<br/>
 `${file.name}` is the name of the file.
@@ -1002,8 +1033,8 @@ This `playStream` method first reset the current media state via `resetState` me
 export class HomePage {
   // ...constructor and other methods
   resetState() {
-      this.audioProvider.stop();
-      this.store.dispatch({ type: RESET });
+    this.audioProvider.stop();
+    this.store.dispatch({ type: RESET });
   }
 }
 ```
@@ -1018,46 +1049,46 @@ Based on each particular event, we dispatch a store action with appropriate payl
 export class HomePage {
   // ...constructor and other methods
   playStream(url) {
-      this.resetState();
-      this.audioProvider.playStream(url).subscribe(event => {
-        const audioObj = event.target;
-        if (event.type === "canplay") {
-          this.store.dispatch({ type: CANPLAY, payload: { value: true } });
-        } else if (event.type === "loadedmetadata") {
-          this.store.dispatch({
-            type: LOADEDMETADATA,
-            payload: {
-              value: true,
-              data: {
-                time: this.audioProvider.formatTime(
-                  audioObj.duration * 1000,
-                  "HH:mm:ss"
-                ),
-                timeSec: audioObj.duration,
-                mediaType: "mp3"
-              }
-            }
-          });
-        } else if (event.type === "playing") {
-          this.store.dispatch({ type: PLAYING, payload: { value: true } });
-        } else if (event.type === "pause" || event.type === "ended") {
-          this.store.dispatch({ type: PLAYING, payload: { value: false } });
-        } else if (event.type === "timeupdate") {
-          this.store.dispatch({
-            type: TIMEUPDATE,
-            payload: {
-              timeSec: audioObj.currentTime,
+    this.resetState();
+    this.audioProvider.playStream(url).subscribe(event => {
+      const audioObj = event.target;
+      if (event.type === "canplay") {
+        this.store.dispatch({ type: CANPLAY, payload: { value: true } });
+      } else if (event.type === "loadedmetadata") {
+        this.store.dispatch({
+          type: LOADEDMETADATA,
+          payload: {
+            value: true,
+            data: {
               time: this.audioProvider.formatTime(
-                audioObj.currentTime * 1000,
+                audioObj.duration * 1000,
                 "HH:mm:ss"
-              )
+              ),
+              timeSec: audioObj.duration,
+              mediaType: "mp3"
             }
-          });
-        } else if (event.type === "loadstart") {
-          this.store.dispatch({ type: LOADSTART, payload: { value: true } });
-        }
-      });
-    }
+          }
+        });
+      } else if (event.type === "playing") {
+        this.store.dispatch({ type: PLAYING, payload: { value: true } });
+      } else if (event.type === "pause" || event.type === "ended") {
+        this.store.dispatch({ type: PLAYING, payload: { value: false } });
+      } else if (event.type === "timeupdate") {
+        this.store.dispatch({
+          type: TIMEUPDATE,
+          payload: {
+            timeSec: audioObj.currentTime,
+            time: this.audioProvider.formatTime(
+              audioObj.currentTime * 1000,
+              "HH:mm:ss"
+            )
+          }
+        });
+      } else if (event.type === "loadstart") {
+        this.store.dispatch({ type: LOADSTART, payload: { value: true } });
+      }
+    });
+  }
 }
 ```
 
@@ -1068,7 +1099,7 @@ So once `playStream` method is fired, media playback is initiated. User might wa
 export class HomePage {
   // ...constructor and other methods
   pause() {
-      this.audioProvider.pause();
+    this.audioProvider.pause();
   }
 }
 ```
@@ -1080,7 +1111,7 @@ It's also true that, User also might want to replay the media again. For that we
 export class HomePage {
   // ...constructor and other methods
   play() {
-      this.audioProvider.play();
+    this.audioProvider.play();
   }
 }
 ```
@@ -1092,7 +1123,7 @@ To stop the media, we have `stop` method, which calls the AudioProvider's stop m
 export class HomePage {
   // ...constructor and other methods
   stop() {
-      this.audioProvider.stop();
+    this.audioProvider.stop();
   }
 }
 ```
@@ -1321,33 +1352,36 @@ $ ionic cordova run android
 ```
 
 This is how app looks like:
-*Image here*
+_Image here_
 
 ## Backend
+
 We are storing our Audio Files on Google Cloud Storage. We need to create Google Cloud Account and Configure it.
 
 ### Create and configure Google Cloud
-1. Go to <https://cloud.google.com/> and Login with your Google Account.
-2. Open Google Cloud Console and then Create a New Project.
-3. Now we have to create a Service account key, which will allow our backend app to access Google Cloud Storage via Google APIs.
-   * Click on **APIs & Services** sidemenu and then click on **Credentials**. 
-   * Then click on **Create credentials** drop down and select **Service account key**.
-   * Fill Service Account Name and Select **Storage** > **Storage Object Viewer** as **Role**. It's very important, because we only need to fetch the list of media files. That's why we only need that Role.
-   * Select Key type as **JSON** and click on *Create*.
-4. It will download a *.json* file on your computer. Save this file somewhere secure, we need that for our backend.
+
+1.  Go to <https://cloud.google.com/> and Login with your Google Account.
+2.  Open Google Cloud Console and then Create a New Project.
+3.  Now we have to create a Service account key, which will allow our backend app to access Google Cloud Storage via Google APIs.
+    * Click on **APIs & Services** sidemenu and then click on **Credentials**.
+    * Then click on **Create credentials** drop down and select **Service account key**.
+    * Fill Service Account Name and Select **Storage** > **Storage Object Viewer** as **Role**. It's very important, because we only need to fetch the list of media files. That's why we only need that Role.
+    * Select Key type as **JSON** and click on _Create_.
+4.  It will download a _.json_ file on your computer. Save this file somewhere secure, we need that for our backend.
 
 ### Uploading Files on Google Cloud
 
 Now that we have configured our Google Cloud Storage. We need to upload files to Google Cloud Storage.
 
-1. In Google Cloud Dashboard, go to **Storage** > **Browser**.
-2. Create a New Bucket. Save the name of the bucket somewhere, we need it in our Backend app.
-3. Now upload the content to that bucket, that you want inside your Audio Player.
-4. Also make sure that your files are public.
+1.  In Google Cloud Dashboard, go to **Storage** > **Browser**.
+2.  Create a New Bucket. Save the name of the bucket somewhere, we need it in our Backend app.
+3.  Now upload the content to that bucket, that you want inside your Audio Player.
+4.  Also make sure that your files are public.
 
 > For the sake of blog post, we are making our media files public. In general you wouldn't want to do that.
 
 ### Accessing Google Cloud
+
 We are going to use Webtask to create our backend. It's fairly simple to use it. Login at <https://webtask.io> and in sidemenu click on **+** icon to create a new webtask.
 Then, it will open Webtask Editor for you. We will write our code using that editor.
 
@@ -1359,27 +1393,28 @@ First we will add all the required Node Modules to our Webtask as follows:
 Let's write our code in the editor now. First, import the required libraries in the editor as follows:
 
 ```javascript
-const express = require('express');
-const Webtask = require('webtask-tools');
-const bodyParser = require('body-parser');
-const Storage = require('@google-cloud/storage');
-const jwt = require('express-jwt');
-const jwtAuthz = require('express-jwt-authz');
-const jwks = require('jwks-rsa');
+const express = require("express");
+const Webtask = require("webtask-tools");
+const bodyParser = require("body-parser");
+const Storage = require("@google-cloud/storage");
+const jwt = require("express-jwt");
+const jwtAuthz = require("express-jwt-authz");
+const jwks = require("jwks-rsa");
 ```
-Now copy the content of Service Account Key *.json* file and assign it to following variable.
+
+Now copy the content of Service Account Key _.json_ file and assign it to following variable.
 
 ```javascript
 // ... require libraries
 const apiKey = {...} // Service accont key here
-``` 
+```
 
 Now create a `config` object with Google project id and this `apiKey` as follows:
 
 ```javascript
 // ... require libraries
 const config = {
-  projectId: 'GOOGLE_PROJECT_ID',
+  projectId: "GOOGLE_PROJECT_ID",
   credentials: apiKey
 };
 ```
@@ -1389,8 +1424,9 @@ and create a Google Storage instance with our Google cloud storage bucket `name`
 ```javascript
 // ... require libraries
 const myAppStorage = Storage(config);
-const audio_bucket = myAppStorage.bucket('auth0-audio-app');
+const audio_bucket = myAppStorage.bucket("auth0-audio-app");
 ```
+
 Here `auth0-audio-app` is the name of our bucket.
 
 Now configure Authentication in our application.
@@ -1409,6 +1445,7 @@ const jwtCheck = jwt({
     algorithms: ['RS256']
 });
 ```
+
 Replace `{AUTH_DOMAIN}` with your Auth0 Domain and `API_IDENTIFIER` with your API Identifier(Audience) value.
 
 Now create express app and `/media` endpoint for getting media files in our mobile application.
@@ -1419,20 +1456,24 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.get('/', function (req, res) {
+app.get("/", function(req, res) {
   res.sendStatus(200);
 });
 
-app.get('/media',jwtCheck, function(req, res) {
-   audio_bucket.getFiles({
-     delimiter: '/',
-     autoPaginate: false,
-     prefix: 'media/'
-  }, (err, files, nextQuery, apiResponse) => {
-    res.send({apiResponse: apiResponse});
-  });
+app.get("/media", jwtCheck, function(req, res) {
+  audio_bucket.getFiles(
+    {
+      delimiter: "/",
+      autoPaginate: false,
+      prefix: "media/"
+    },
+    (err, files, nextQuery, apiResponse) => {
+      res.send({ apiResponse: apiResponse });
+    }
+  );
 });
 ```
+
 Basically, in `/media` route, we are fetching all the files from our Google Storage bucket and sending that to our application. The response looks like following:
 
 ```javascript
@@ -1443,6 +1484,7 @@ Basically, in `/media` route, we are fetching all the files from our Google Stor
   }
 }
 ```
+
 <a name="cloud-response"></a>
 Here is an example item:
 
@@ -1467,7 +1509,6 @@ Here is an example item:
   etag: "CNv4hqyAvtoCEAI="
 },
 ```
-
 
 Finally export the app as follows, which is required for Webtask:
 
