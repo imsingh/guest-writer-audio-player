@@ -1359,9 +1359,13 @@ _Image here_
 
 We are storing our Audio Files on Google Cloud Storage. We need to create Google Cloud Account and Configure it.
 
+<div class="alert alert-info alert-icon">
+  <i class="icon-budicon-487"></i>
+  Google Cloud Provides a Free Tier account. But in order to use it, you need to have credit/debit card. You can get more information <a href="https://cloud.google.com/free/docs/frequently-asked-questions">here.</a>
+</div>
 ### Create and configure Google Cloud
 
-1.  Go to <https://cloud.google.com/> and Login with your Google Account.
+1.  Go to <https://cloud.google.com/> and Register with your Google account.
 2.  Open Google Cloud Console and then Create a New Project.
 3.  Now we have to create a Service account key, which will allow our backend app to access Google Cloud Storage via Google APIs.
     * Click on **APIs & Services** sidemenu and then click on **Credentials**.
