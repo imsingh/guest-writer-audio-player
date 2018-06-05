@@ -158,7 +158,7 @@ $ ionic cordova plugin add cordova-plugin-safariviewcontroller
 Observable is the central piece of code for our application. RxJS comes with helper function named 'create' to help us in creating custom observables.
 `Observable.create(observer);`
 
-It takes an _Observer_ object and returns a function.
+It takes a function with _Observer_ object and returns a function.
 
 Observer object has three methods on it : _next_, _error_ and _complete_.
 
