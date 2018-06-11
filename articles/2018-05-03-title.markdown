@@ -407,7 +407,7 @@ We have all our files in the Google Cloud Storage. We access Google Cloud Storag
 
 #### Cloud Service
 
-We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_. We are doing this because, Google Cloud Sends back one extra dummy entry with that particular `contentType`, which we don't need.
+We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_. We are doing this because, Google Cloud Sends back one extra dummy entry with that particular `contentType`, which we don't need. Along with that, we are also generating the public url of the media files.
 
 Create a file named `cloud.ts` inside `/src/provider/cloud/` and do the following:
 
@@ -421,23 +421,32 @@ export class CloudProvider {
 
   getFiles() {
     const url = `${this.url}/media`;
-    return this.http.get(url).pipe(
-      map((data: any) => {
-        return data.apiResponse.items.filter(file => {
-          return (
-            file.contentType !==
-            "application/x-www-form-urlencoded;charset=UTF-8"
-          );
-        });
-      })
-    );
+    return this.http.get(url)
+      .pipe(
+        map((data: any) => {
+          return data.apiResponse.items.filter(file => {
+            return file.contentType !== "application/x-www-form-urlencoded;charset=UTF-8"
+          }).map(file => {
+            file.url = `https://storage.googleapis.com/${file.bucket}/${file.name}`;
+            return file;
+          });
+        })
+      );
   }
 }
 ```
 
-_url_ in this case is the url of our Node App.
+`url` in this case is the url of our Node App.
+`file.url` is the url the public url of media file.
+
+<div class="alert alert-info alert-icon">
+  <i class="icon-budicon-487"></i>
+Since Google Cloud requires you to add your Credit card information in order to use Storage Service. If you don't have credit card, you can mock CloudProvider service to use hard-coded responses to work with the tutorial. Take a look at this
+<a href="https://gist.github.com/imsingh/660ddabff0be9d4f4fc2022c7a5fb28f">Github Gist.</a>
+</div>
 
 ### Managing Application State
+
 
 In this application, we are using NgRx to manage the state of our application. NgRx is based on Redux, which is very famous in React world for managing state.
 
@@ -1005,7 +1014,7 @@ export class HomePage {
   }
 ```
 
-Whenever user clicks on the Media File. `openFile` method is fired. We prepare the media url in Google Cloud and fire playStream method with that `url`.
+Whenever user clicks on the Media File. `openFile` method is fired. Then we fire playStream method with that `file.url`, which is the public url of media file.
 
 URL of media file looks like following:
 `https://storage.googleapis.com/${file.bucket}/${file.name}`
@@ -1021,8 +1030,7 @@ export class HomePage {
   // ...constructor and other methods
   openFile(file, index) {
     this.currentFile = { index, file };
-    let url = `https://storage.googleapis.com/${file.bucket}/${file.name}`;
-    this.playStream(url);
+    this.playStream(file.url);
   }
 }
 ```
