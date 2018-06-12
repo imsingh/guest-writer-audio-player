@@ -20,6 +20,9 @@ Creating an Audio Player is always an intimidating task specially if you think a
 
 Secondly, we will also create a very small backend using **NodeJS** and **Google Cloud Storage** to store our media files. Along with that, we will secure our Backend and App using **Auth0**.
 
+Architecture of App looks like following:
+![Architecture](https://i.imgur.com/YuFrk2I.png)
+
 ## Frontend
 
 ### Getting Started
