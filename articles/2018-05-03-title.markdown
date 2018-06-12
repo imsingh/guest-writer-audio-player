@@ -1361,7 +1361,7 @@ $ ionic cordova run android
 ```
 
 This is how app looks like:
-_Image here_
+![Audio Player Image](https://i.imgur.com/8zQftDW.png)
 
 ## Backend
 
