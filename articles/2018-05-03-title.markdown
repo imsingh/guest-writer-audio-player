@@ -26,7 +26,7 @@ related:
 - authenticating-android-apps-developed-with-kotlin
 ---
 
-**TL;DR:** In this article, you will learn how to implement a mobile audio player app using [**Angular**](https://angular.io) and [**Ionic**](https://ionic.io). You will handle audio operations using [_RxJS_](https://github.com/ReactiveX/rxjs) and _Observables_ and you will also explore how you can manage application's state with [**NgRx**](https://github.com/ngrx/platform). To secure your application, you will use [**Auth0**](https://auth0.com). If needed, [you can find the final code at this GitHub repository](https://github.com/imsingh/audio-player/).
+**TL;DR:** In this article, you will learn how to implement a mobile audio player app using [**Angular**](https://angular.io) and [**Ionic**](https://ionic.io). You will handle audio operations using [_RxJS_](https://github.com/ReactiveX/rxjs) and _Observables_ and you will also explore how you can manage application's state with [**NgRx**](https://github.com/ngrx/platform). To secure your application, you will use [**Auth0**](https://auth0.com). If needed, [you can find the final code at this GitHub repository](https://github.com/imsingh/auth0-audio-player).
 
 ## Introduction
 
@@ -122,14 +122,17 @@ a library built to integrate RxJS and Angular applications to help you manage th
 * [`moment.js`](https://momentjs.com/): a library that helps manipulating dates and times in JavaScript;
 * [`auth0-js`](https://www.npmjs.com/package/auth0-js): the official Auth0 library for JavaScript apps;
 * [`@auth0/cordova`](https://github.com/auth0/auth0-cordova): the official Auth0 library for Cordova apps;
-* [`@auth0/angular-jwt`](https://www.npmjs.com/package/@auth0/angular-jwt): the official Auth0 library to help handling JWTs on Angular apps;
+* [`rxjs`](https://github.com/ReactiveX/rxjs): a reactive programming library for JavaScript;
+* [`rxjs-compat`](https://github.com/ReactiveX/rxjs/tree/master/compat): a package to get backwards compatibility with RxJS previous to version 6;
+<!--* [`@auth0/angular-jwt`](https://www.npmjs.com/package/@auth0/angular-jwt): the official Auth0 library to help handling JWTs on Angular apps;-->
 
-To install these libraries, you can use the following commands:
 
 ```bash
 cd audio-player
-npm install --save @angular/animations @ngrx/store moment auth0-js @types/auth0-js @auth0/cordova @auth0/angular-jwt
+npm install --save @angular/animations @ngrx/store moment auth0-js @types/auth0-js rxjs@6.2.1 rxjs-compat@6.2.1
 ```
+
+> **Note**: As of writing this article, when you create a new Ionic application. It is shipped with Angular 5.x and RxJS 5.x. But the latest `@ngrx/store` version(6.x)  requires RxJS 6.x. That's why you need to install version 6.x of RxJS. Also, Angular 5.x uses RxJS 5.x APIs. So to have backward compatibility with it, you also need to install `rxjs-compat`.
 
 ## Creating an Ionic Service to Manage the Playback
 
@@ -153,13 +156,13 @@ Also, calling `Observable.create` will return a function that you can call when 
 
 In your audio player app, you are going to create an observable to get notifications about media events like `playing`, `pause`, `timeupdate`, and so on. So, basically, you will listen to the media event's of `Audio()` inside the observable and then notify the rest of the app via the `observer.next` method.
 
-Now that you understand why do you need an observer, you can start by creating a service in your Ionic app:
+Now that you understand why do you need an observable, you can start by creating a service in your Ionic app:
 
 ```bash
 ionic generate provider audio
 ```
 
-This will generate a file called `audio.ts` under `./src/providers/audio/`. Replace the contents of this file with:
+This will generate a service in file called `audio.ts` under `./src/providers/audio/` and this service will be added to `NgModule` in `app.module.ts`. Replace the contents of this file with:
 
 ```typescript
 import {Injectable} from '@angular/core';
@@ -265,7 +268,34 @@ export class AudioProvider {
 
 ## Reading the Music Files
 
-@imsingh, add instructions here on how to set up your mock `CloudProvider`. Please, use the second-person singular narrative.
+Now that you have created Audio Service for playback features. You will need to create a service to get list of audio files.
+
+You can create a cloud service using Ionic:
+
+```bash
+ionic generate provider cloud
+```
+It will generate a service in file called `cloud.ts` under `./src/providers/cloud`. Replace the content of this file with:
+
+```typescript
+
+import { Injectable } from '@angular/core';
+import { of } from 'rxjs';
+
+@Injectable()
+export class CloudProvider {
+  files:any = [
+    { url: 'https://ia801504.us.archive.org/3/items/EdSheeranPerfectOfficialMusicVideoListenVid.com/Ed_Sheeran_-_Perfect_Official_Music_Video%5BListenVid.com%5D.mp3', 
+      name: 'Perfect by Ed Sheeran'
+    }
+  ];
+  getFiles() {
+   return of(this.files);
+  }
+}
+```
+
+The `getFiles` method above basically mocks a `http` request by returning an `Observable` with a static `files` object.
 
 ## Managing Ionic App's State with NgRx Store
 
@@ -396,7 +426,7 @@ ionic cordova plugin add cordova-plugin-safariviewcontroller
 
 1. Go to your [**Auth0 Dashboard**](https://manage.auth0.com/#/) and click the "[create a new application](https://manage.auth0.com/#/applications/create)" button. 
 2. Name your new app (e.g. "Ionic Audio Player"), select "Native App" as its type, and click the "Create" button.
-3. In the **Settings** tab of your new Auth0 app, add `file://*, http://localhost:8080/*` in the **Allowed Origins (CORS)** box.
+3. In the **Settings** tab of your new Auth0 app, add `file://*, http://localhost:8080` in the **Allowed Origins (CORS)** box.
 4. Still in the **Settings** tab, add `YOUR_PACKAGE_ID://YOUR_AUTH_DOMAIN/cordova/YOUR_PACKAGE_ID/callback`, to the **Allowed Callback URLs**.
 5. Add `http://localhost:8080` to the **Allowed Logout URLs**.
 6. Click the "Save Changes" button.
@@ -630,7 +660,7 @@ In the second `ion-toolbar`, you will have the rest of the playback controls, as
 {% raw %}
 <!-- ... ion-header and ion-content -->
 
-<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">>
+<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
 
   <!-- ... seekbar control here-->
 
@@ -1160,8 +1190,7 @@ The final steps, before being able to use your app for the first time, starts wi
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ErrorHandler, NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
-import { JwtModule, JWT_OPTIONS } from '@auth0/angular-jwt';
+import { HttpClientModule } from '@angular/common/http'; 
 import { StoreModule } from '@ngrx/store';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -1177,24 +1206,6 @@ import { AuthService } from '../providers/auth0/auth.service';
 import { IonicStorageModule, Storage } from '@ionic/storage';
 ```
 
-Continues with the definition of a factory function to configure the `angular-jwt` library:
-
-```typescript
-// ... import statements
-export function jwtOptionsFactory(storage) {
-  return {
-    tokenGetter: () => {
-      return storage.get("access_token");
-    },
-    whitelistedDomains: [
-      "wt-3a798f13259d542214174ba32c1e8bf1-0.sandbox.auth0-extend.com"
-    ]
-  };
-}
-```
-
-@imsingh, is the `whitelistedDomains` needed now that we won't use Webtask in this article?
-
 Then, ends with you having to define all the required `declarations`, `imports`, `providers` in the `NgModule`, as shown here:
 
 ```typescript
@@ -1205,13 +1216,6 @@ Then, ends with you having to define all the required `declarations`, `imports`,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
-    JwtModule.forRoot({
-      jwtOptionsProvider: {
-        provide: JWT_OPTIONS,
-        useFactory: jwtOptionsFactory,
-        deps: [Storage]
-      }
-    }),
     IonicStorageModule.forRoot(),
     StoreModule.forRoot({
       appState: mediaStateReducer
@@ -1231,8 +1235,6 @@ Then, ends with you having to define all the required `declarations`, `imports`,
 })
 export class AppModule {}
 ```
-
-> Take a closer look at how the `JwtModule` is configured.
 
 ## Building and Running the Ionic Audio Player
 
