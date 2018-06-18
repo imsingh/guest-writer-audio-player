@@ -1,368 +1,182 @@
 ---
 layout: post
-title: "Building Audio Player with Angular, Ionic, RxJS, and NgRx "
-description: "Learn how to create an Audio player using Angular, Ionic, RxJS and NgRx"
-date: "2018-05-03 08:30"
+title: "Building Audio Players with Angular, Ionic, RxJS, and NgRx"
+description: "In this article, you will learn how to develop modern mobile apps with Angular, Ionic, RxJS and NgRx."
+date: 2018-06-27 08:30
+category: Technical Guide, Mobile, Ionic
 author:
   name: "Indermohan Singh"
   url: "imsinghk7"
   mail: "indermohansinghk7@gmail.com"
-  avatar: "https://twitter.com/imsinghk7/profile_image?size=original"
+  avatar: "https://cdn.auth0.com/blog/guest-authors/indermohan-singh.jpg"
+design:
+  bg_color: "#0700BA"
+  image: https://cdn.auth0.com/blog/cypress-tests/logo.png
+tags:
+- ionic
+- angular
+- rxjs
+- ngrx
+- mobile
+- auth0
+- hybrid
 related:
-- 2017-11-15-an-example-of-all-possible-elements
+- 2017-08-08-ionic-framework-how-to-get-started
+- alternatives-to-native-mobile-app-development
+- authenticating-android-apps-developed-with-kotlin
 ---
 
-**TL;DR:** In this article, we'll implement an Audio player using [**Angular**](https://angular.io) and [**Ionic**](https://ionic.io). We will handle Audio Operations using [**RxJS**](https://github.com/ReactiveX/rxjs) _Observables_ and we'll also explore how we can manage application's state with [**NgRx**](https://github.com/ngrx/platform) inside an Angular application. We will also use [**Auth0**](https://auth0.com) for Authentication. You can check the final code at [Github Repository](https://github.com/imsingh/audio-player/).
+**TL;DR:** In this article, you will learn how to implement a mobile audio player app using [**Angular**](https://angular.io) and [**Ionic**](https://ionic.io). You will handle audio operations using [_RxJS_](https://github.com/ReactiveX/rxjs) and _Observables_ and you will also explore how you can manage application's state with [**NgRx**](https://github.com/ngrx/platform). To secure your application, you will use [**Auth0**](https://auth0.com). If needed, [you can find the final code at this GitHub repository](https://github.com/imsingh/audio-player/).
 
 ## Introduction
 
-Creating an Audio Player is always an intimidating task specially if you think about managing media's _state_, reacting to media _events_ and reflecting these changes correctly on the UI. We will be using Angular and Ionic as our framework of choice. To handle the playback of media in a reactive way, we'll be adapting JavaScript's **Audio** Object to **RxJS** _Observable_. We will create our custom Observable for that. We'll use **NgRx** store to manage the state of the application in our app.
+Creating an audio player is always an intimidating task. Specially if you think about managing media's _state_, reacting to media _events_, and reflecting these changes correctly on the UI. So, in this article, you will use Angular and Ionic to easily solve these issues.
 
-Secondly, we will also create a very small backend using **NodeJS** and **Google Cloud Storage** to store our media files. Along with that, we will secure our Backend and App using **Auth0**.
+To handle media playback in a reactive way, you will adapt [JavaScript's **Audio** object](https://www.w3schools.com/jsref/dom_obj_audio.asp) with a **RxJS** _Observable_ and you will use the **NgRx** store to manage the state of your audio player.
 
-Architecture of App looks like following:
-![Architecture](https://i.imgur.com/YuFrk2I.png)
+Besides that, you will also use Auth0 to secure your mobile app and, in a subsequent article, you will learn how to create a secure backend to provide the list of musics to your app (for now, you will use a mock service with static data).
 
-## Frontend
+## Prerequisites for Ionic Development
 
-### Getting Started
+Since you are going to make a mobile application, you will need to have the required SDKs for building the app. In this article, you will use [Cordova](https://cordova.apache.org/) to package your Ionic app into native mobile packages.
 
-#### Prerequisites
+The following sections show the steps you will need to follow before starting the development of your application.
 
-Since we are going to make a mobile application. We need to have the required SDKs for building the app. We will use Cordova to package our Ionic app into Native Packages.
+### Install Native SDKs for iOS
 
-* Install the Native sdks for building application.
+For the iOS platform, you will need a Mac OS X environment and Xcode installed on it. [For more information about configuring native SDKs in a Mac OS X environment, check this reference](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). After installing Xcode, you will also need some command-line tools and the `ios-deploy` tool to run a simulator.
 
-  * For iOS applications, we need to install Xcode. It's important to keep in mind that, you need macOS to install Xcode. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/ios/#installing-the-requirements). After you install Xcode, you also need some command-line tools and ios-deploy tool to run simulator. We can install these as follows:
+To install these tools, proceed as follows:
 
-    * From command line, run this command: `$ xcode-select --install`, to install xcode command-line tool
-    * and run, `$ npm install -g ios-deploy`, to install ios-deploy tool.
+* From the command line, run `xcode-select --install` to install the Xcode command-line tool.
+* Then, run `npm install -g ios-deploy` to install the `ios-deploy` tool.
 
-  * For Android applications, we need to have Android SDKs. Check the complete requirements [here](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements). We need to do following things:
-    * JDK: We need to have JDK installed and also have to set `JAVA_HOME` environment variable according to JDK installation.
-    * Gradle: Gradle is also required for using cordova. Install gradle and also add it `PATH` variable in environment variables.
-    * Android SDK: Most importantly, we need Android SDKs to make apk file from cordova project. Install **Android Studio** and using `sdkmanager` install
-      1.  Anrdoid Platform SDK,
-      2.  build-tools for that SDK version and
-      3.  Android Support Repository.
-    * We have to set `ANDROID_HOME` environment variable to Android SDK location. It's also recommended to add Android SDK's `tools`, `tools/bin` and `platform-tools` directories to `PATH` variable.
+[If you don't have Node.js and NPM installed in your machine, please, check the instruction on this reference](https://nodejs.org/en/download/).
 
-* Then we need to install NodeJS. Go to <https://nodejs.org/en/download/> and download the package depending on the development machine.
+### Install Native SDKs for Android
 
-* We need to install Cordova CLI and Ionic CLI via npm.
+For Android applications, you will need to have Android SDKs and some tools. The steps below, briefly explain how to install these SDKs and tools in your environment. However, if you need more information, [you can check this link for a more thorough explanation on how to install everything](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html#installing-the-requirements):
 
-```
-$ npm install -g ionic cordova
-```
+* JDK: [You will need to have a JDK installed](http://www.oracle.com/technetwork/java/javase/downloads/index.html) and the `JAVA_HOME` environment variable set to your JDK installation.
+* Gradle: You will also need to install [Gradle](https://gradle.org/) and add it to the `PATH` variable in your environment variables.
+* Android SDK: Most importantly, you will need Android SDKs to generate `apk` files for your app. So, install [the Android Studio IDE](https://developer.android.com/studio/) and, using the `sdkmanager`, install these:
+  1.  Android Platform SDK;
+  2.  build-tools for that SDK version;
+  3.  and Android Support Repository.
 
-### Auth0 Configuration
+After these, you will need to set the `ANDROID_HOME` environment variable to your Android SDK location. It's also recommended to add Android SDK's `tools`, `tools/bin`, and `platform-tools` directories to `PATH` variable.
 
-We are going to secure our app and backend api with [Auth0](https://auth0.com). For that we need to create an Auth0 App and create an Auth0 API. Let's do it.
+### Install Node.js and Tools
 
-#### Creating Auth0 Account
+As already mentioned, you will need to install Node.js in your development machine. So, if you haven't done so yet, go to [the download page of Node.js](https://nodejs.org/en/download/) and follow the instructions.
 
-Let's begin with creating an Auth0 Account.
+After installing it, you will need to install Cordova CLI and Ionic CLI via `npm`:
 
-1.  First, go to <https://auth0.com/signup> and Sign Up.
-2.  Then, Select the Tenant Domain. It's gonna be your Auth0 Domain, which we are going to use for authentication.
-3.  Finally, Select Personal Account, type of application and other required field and click **Next**. It will open Auth0 Dashboard.
-
-#### Creating an Auth0 App
-
-Now that we have our Auth0 account. Let's create Auth0 app.
-
-1.  In Auth0 Dashboard, click on _+ Create Application_. It will open create application dialog box.
-2.  Write the name of the application and select the type of application as Native App and press **Create** Button.
-
-#### Configuring our App
-
-In order to make our app communicate with Auth0, we need to configure Auth0 App.
-
-1.  Click on Applications in sidemenu and select the newly created app. It will open settings of the application.
-2.  In the **Allowed Web Origins** Box, input the following value:
-    `file://*,http://localhost:8080/*`
-3.  You also need to configure callback url for the application. It's url which Auth0 will redirect to after user is Authenticated.
-
-Set the callback url in **Allowed Callback URLs** Box as follows:
-
-```
-# replace YOUR_PACKAGE_ID with your app package ID
-# replace YOUR_AUTH_DOMAIN with your Auth0 Domain
-YOUR_PACKAGE_ID://YOUR_AUTH_DOMAIN/cordova/YOUR_PACKAGE_ID/callback
+```bash
+npm install -g ionic cordova
 ```
 
-> YOUR_PACKAGE_ID or app package ID or app Identifier is a string to uniquely identify the app on device and in Apple App Store and Google Play Store. It looks something like this, _com.example.app_. You can get or set this inside `config.xml` file in your project.
+## Scaffolding the Ionic App
 
-#### Creating an API
+After installing all the environment dependencies, you can focus on scaffolding your Ionic app. To do this, issue the following command on a terminal:
 
-Now that we have our Auth0 app created. We need to create an Auth0 API. Which is required to secure our backend app.
-
-1.  Click on APIs in the sidemenu in Auth0 Dashboard and click on _+ Create API_ button. It will open a create api dialog.
-2.  Input the following details:
-
-    a. Name: Choose any user friendly name to recognize API.
-    b. Identifier: Choose any unique identifier for the API. It is recommend to use a URL, which is not publicly available. We need this Identifier later while coding the application.
-    c. Signing Algorithm: It should be `RS256`.
-
-3.  Then press **Create**.
-
-#### Collect Following Information
-
-We need following information for our application:
-
-* _Domain_ : It's your Auth0 Domain.
-
-* _ClientID_ : It's unique per application. You will get it from Application's setting page.
-
-* _API Identifier_ : We need the Identifier value of API, that we have created. You will get it from API's setting page.
-
-### Scaffolding the app and Installing dependencies
-
-Let's scaffold an Ionic app using the blank template
-
-```
-$ ionic start audio-player blank
+```bash
+ionic start audio-player blank
 ```
 
-It will create a directory named `audio-player` in current directory and download `blank` starter project inside it. Along with that, CLI will ask you couple of questions as follows:
+This command will ask you two questions:
 
-1.  Would you like to integrate your new app with Cordova to target native iOS and Android? (y/N): Press **y**, since we are going to build app for Mobile Devices.
-2.  Install the free Ionic Pro SDK and connect your app? (Y/n): Press **n** because we don't really need to use Ionic Pro feature for this tutorial.
+1. _Would you like to integrate your new app with Cordova to target native iOS and Android? (y/N):_ You can input `y` (yes) as you are going to build the app for mobile devices.
+2. _Install the free Ionic Pro SDK and connect your app? (Y/n):_ Press `n` because you won't really need to use any Ionic Pro feature in this tutorial.
 
-#### Installing Dependencies
+### Running the Application
 
-We are going to be using following dependencies for our application.
+Before continuing, make sure you can start your application on some mobile device or emulator.
 
-* @angular/animations
-* @ngrx/store
-* moment
-* auth0-js, @auth0/cordova, @auth0/angular-jwt
+For example, if you are on a Mac OS X environment and you want to use an emulator to test your application, you can simply run:
 
-Let's install these dependencies.
-
-```
-$ cd audio-player
-$ npm install --save @angular/animations @ngrx/store moment auth0-js @auth0/cordova @auth0/angular-jwt
+```bash
+# for the iOS app
+ionic cordova run ios -lc
 ```
 
-We also need to install cordova plugins for authentication using auth0.
+> **Note**: `-lc` above means that you Ionic to _spin up server to live-reload www files_ (the `l`) and to _print out console logs to terminal_ (the `c`).
 
-```
-# replace {YOUR_PACKAGE_ID} with your app identifier and
-# replace YOUR_AUTH0_DOMAIN with your Auth0 Domain
-$ ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST=YOUR_AUTH0_DOMAIN --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
-$ ionic cordova plugin add cordova-plugin-safariviewcontroller
-```
+For reference, these are the other commands that you can use when aiming your current development machine (i.e. a browser on it) or Android:
 
-### Creating Audio Service for Managing Playback
+```bash
+# serve locally
+ionic serve
 
-#### Creating Observable
-
-Observable is the central piece of code for our application. RxJS comes with helper function named 'create' to help us in creating custom observables.
-`Observable.create(observer);`
-
-It takes a function with _Observer_ object and returns a function.
-
-Observer object has three methods on it : _next_, _error_ and _complete_.
-
-1.  To emit value, we call `observer.next` method with the value.
-2.  In case of an error, we fire the `observer.error` with error and observable ends.
-3.  If we are done with observer and there is no value to emit, we call `observer.complete` method.
-
-We also return a function inside Observable, which is called when Observable is unsubscribed. So can we do the clean up of our Observable in that function.
-
-We are gonna be using this observable to notify about Media Events like playing, pause, timeupdate and so on. So basically, we will listen to the media event's of Audio() inside the observable and then notify it via `observer.next` method.
-
-Let's first create an Audio Service using Ionic CLI
-
-```
-$ ionic generate provider audio
+# for the android app
+ionic cordova run android
 ```
 
-It will generate a file `/src/providers/audio/audio.ts`. Add the following content :
+### Installing Project Dependencies
+
+Having confirmed that you can run the basic app in some mobile device, you can start by installing the dependencies. To build your mobile audio player, you will use the following NPM libraries:
+
+* [`@angular/animations`](https://www.npmjs.com/package/@angular/animations): a package to improve your app UX by adding some animations;
+* [`@ngrx/store`](https://github.com/ngrx/store): 
+a library built to integrate RxJS and Angular applications to help you manage the state of your apps;
+* [`moment.js`](https://momentjs.com/): a library that helps manipulating dates and times in JavaScript;
+* [`auth0-js`](https://www.npmjs.com/package/auth0-js): the official Auth0 library for JavaScript apps;
+* [`@auth0/cordova`](https://github.com/auth0/auth0-cordova): the official Auth0 library for Cordova apps;
+* [`@auth0/angular-jwt`](https://www.npmjs.com/package/@auth0/angular-jwt): the official Auth0 library to help handling JWTs on Angular apps;
+
+To install these libraries, you can use the following commands:
+
+```bash
+cd audio-player
+npm install --save @angular/animations @ngrx/store moment auth0-js @types/auth0-js @auth0/cordova @auth0/angular-jwt
+```
+
+## Creating an Ionic Service to Manage the Playback
+
+After installing your app's dependencies, you can start working on the playback feature.
+
+### Creating an RxJS Observable
+
+The Observable that you are going to create is the central piece of your application. RxJS comes with a helper function named `create` to help you create custom observables.
 
 ```typescript
-// ... import statements
-export class AudioProvider {
-  audioObj = new Audio();
-  // ... constructors and other methods
-  streamObservable(url) {
-    return Observable.create(observer => {
-      this.audioObj.src = url;
-      this.audioObj.load();
-      this.audioObj.play();
-
-      handler = event => observer.next(event);
-      audioObj.addEventListener('playing', handler);
-      audioObj.addEventListener('pause', handler);
-      //...
-
-      return () => {
-        audioObj.pause();
-        audioObj.currentTime = 0;
-
-        audioObj.removeEventListener('playing', handler);
-        audioObj.removeEventListener('plause', handler);
-      }
-    });
-  }
+Observable.create(observer);
 ```
 
-Since we are going to listen to many media events. It's not ideal to use `addEventListener` and `removeEventListener` multiple times. Let's add some helper functions **inside** the Observable to add and remove event listeners in a bit elegant way. Both these functions, `addEvents` and `removeEvents` take array of _events_ as input.
+This function takes an `observer` object and returns a function. Observer objects provide three methods: `next`, `error`, and `complete`.
 
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  streamObservable(url) {
-    const addEvents = function(obj, events, handler) {
-      events.forEach(event => {
-        obj.addEventListener(event, handler);
-      });
-    };
+1.  To emit a value, you can call the `observer.next` method with the desired value.
+2.  In case of an error, you can use the `observer.error` function to throw the error and make the observable stop.
+3.  If you no longer need the observer and there is no more values to emit, you can call the `observer.complete` method.
 
-    const removeEvents = function(events, obj, handler) {
-      events.forEach(event => {
-        obj.removeEventListener(event, handler);
-      });
-    };
-    //...Observable creation here
-  }
+Also, calling `Observable.create` will return a function that you can call when you want to unsubscribe from the observable.
 
+In your audio player app, you are going to create an observable to get notifications about media events like `playing`, `pause`, `timeupdate`, and so on. So, basically, you will listen to the media event's of `Audio()` inside the observable and then notify the rest of the app via the `observer.next` method.
+
+Now that you understand why do you need an observer, you can start by creating a service in your Ionic app:
+
+```bash
+ionic generate provider audio
 ```
 
-Whenever we want to play a new audio file. We want to create this observable and listen to all these media events. We will do this via `playStream()` method. It looks like following:
+This will generate a file called `audio.ts` under `./src/providers/audio/`. Replace the contents of this file with:
 
 ```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  playStream(url) {
-    return this.streamObservable(url).pipe(takeUntil(this.stop$));
-  }
-}
-```
-
-It's important to notice that we automatically unsubscribe to this Observable if `this.stop$` emits any value. We are doing this via `takeUntil` method. It literally means that the Observable is going to emit value until `this.stop$` emits no value.
-
-#### Creating playback and helper methods
-
-**play Method**
-
-In play method, we call Audio() object's `play` method, to play the file when it is paused.
-
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  play() {
-    this.audioObj.play();
-  }
-}
-```
-
-**pause Method**
-
-In pause method, we call Audio() object's `pause` method to pause the audio playback.
-
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  pause() {
-    this.audioObj.pause();
-  }
-}
-```
-
-**stop Method**
-
-In stop method, we call Audio() object's `stop` method to stop the playback.
-
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  stop() {
-    this.stop$.next();
-  }
-}
-```
-
-**seekTo Method**
-
-seekTo method takes seconds as input and change the current time of audio playback to that time.
-
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  seekTo(seconds) {
-    this.audioObj.currentTime = seconds;
-  }
-}
-```
-
-**formatTime method**
-
-This is utility method to format time. It takes time and format as input and return the formatted time using `momentjs`.
-For example,
-
-```typescript
-// ... import statements
-export class AudioProvider {
-  // ... constructors and other methods
-  formatTime(time, format) {
-    return moment.utc(time).format(format);
-  }
-}
-```
-
-#### Complete Audio Service
-
-```typescript
-import { Injectable } from "@angular/core";
-import { Observable, Subject } from "rxjs";
-import { takeUntil } from "rxjs/operators";
-import * as moment from "moment";
+import {Injectable} from '@angular/core';
+import {Observable, Subject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
+import * as moment from 'moment';
 
 @Injectable()
 export class AudioProvider {
   private stop$ = new Subject();
   private audioObj = new Audio();
 
-  constructor() {}
-
-  playStream(url) {
-    return this.streamObservable(url).pipe(takeUntil(this.stop$));
-  }
-
-  stop() {
-    this.stop$.next();
-  }
-
-  seekTo(seconds) {
-    this.audioObj.currentTime = seconds;
-  }
-  pause() {
-    this.audioObj.pause();
-  }
-
-  play() {
-    this.audioObj.play();
-  }
+  constructor() { }
 
   private streamObservable(url) {
     let events = [
-      "ended",
-      "error",
-      "play",
-      "playing",
-      "pause",
-      "timeupdate",
-      "canplay",
-      "loadedmetadata",
-      "loadstart"
+      'ended', 'error', 'play', 'playing', 'pause', 'timeupdate', 'canplay', 'loadedmetadata', 'loadstart'
     ];
 
     const addEvents = function(obj, events, handler) {
@@ -384,7 +198,7 @@ export class AudioProvider {
       this.audioObj.play();
 
       // Media Events
-      const handler = event => observer.next(event);
+      const handler = (event) => observer.next(event);
       addEvents(this.audioObj, events, handler);
 
       return () => {
@@ -397,6 +211,51 @@ export class AudioProvider {
       };
     });
   }
+}
+```
+
+Now, whenever you want to play a new audio file, you will create this observable and listen to all these media events. You will do this via a new method called `playStream()` that you are going to add to the `AudioProvider` class:
+
+```typescript
+// ... import statements ...
+
+export class AudioProvider {
+  // ... constructors and other methods ...
+
+  playStream(url) {
+    return this.streamObservable(url).pipe(takeUntil(this.stop$));
+  }
+}
+```
+
+It's important to notice that you are automatically unsubscribing from this observable if `this.stop$` emits any value.
+
+### Wrapping Up the AudioProvider Service
+
+Now that you have the basis of the `AudioProvider` service, you can develop the rest of its methods: `play`, `pause`, `stop`, `seekTo`, and `formatTime`. As their implementation is self-explanatory, you can simply add these five methods to the `AudioProvider` service as shown below:
+
+```typescript
+// ... import statements ...
+
+export class AudioProvider {
+
+  // ... constructors and other methods ...
+
+  play() {
+    this.audioObj.play();
+  }
+
+  pause() {
+    this.audioObj.pause();
+  }
+
+  stop() {
+    this.stop$.next();
+  }
+
+  seekTo(seconds) {
+    this.audioObj.currentTime = seconds;
+  }
 
   formatTime(time, format) {
     return moment.utc(time).format(format);
@@ -404,93 +263,53 @@ export class AudioProvider {
 }
 ```
 
-### Getting Media Files
+## Reading the Music Files
 
-We have all our files in the Google Cloud Storage. We access Google Cloud Storage via our tiny Node App.
+@imsingh, add instructions here on how to set up your mock `CloudProvider`. Please, use the second-person singular narrative.
 
-#### Cloud Service
+## Managing Ionic App's State with NgRx Store
 
-We are making an Http Request using Angular's HTTP Client. It's also worth noting that we are using RxJS's map to filter the response we get from Google Cloud to delete any entry with contentType _application/x-www-form-urlencoded;charset=UTF-8_. We are doing this because, Google Cloud Sends back one extra dummy entry with that particular `contentType`, which we don't need. Along with that, we are also generating the public url of the media files.
+To help you manage the state of your application, you will take advantage of [the NgRx Store library](https://github.com/ngrx/store). This store is based on Redux, which is very famous in the React world for managing state, and integrates Redux concepts with RxJS.
 
-Create a file named `cloud.ts` inside `/src/provider/cloud/` and do the following:
+If you don't know what Redux is (or how it works), here it goes a brief explanation around it:
 
-```typescript
-// import statements
-...
-@Injectable()
-export class CloudProvider {
-  url: string = "https://wt-3a798f13259d542814174ba32c1e8bf1-0.sandbox.auth0-extend.com/google-cloud";
-  constructor(private http: HttpClient) {}
+> In Redux, the state is managed in a central place. What this means is that you have just one object which stores the current state of your whole application. If, at any point, you want to update this state, you need to `dispatch` an `action` to a function known as `reducer`. This `reducer` is responsible for understanding the `action` and generating a new state based on the action `type` and `data`.
 
-  getFiles() {
-    const url = `${this.url}/media`;
-    return this.http.get(url)
-      .pipe(
-        map((data: any) => {
-          return data.apiResponse.items.filter(file => {
-            return file.contentType !== "application/x-www-form-urlencoded;charset=UTF-8"
-          }).map(file => {
-            file.url = `https://storage.googleapis.com/${file.bucket}/${file.name}`;
-            return file;
-          });
-        })
-      );
-  }
-}
-```
+### Creating a Reducer with NgRx Store
 
-`url` in this case is the url of our Node App.
-`file.url` is the url the public url of media file.
+By default, the NgRx `Action` interface exposes only one property: the `type`. As you will need to send some information along with the type of your actions, you are going to extend the NgRx `Action` interface to suit your needs. 
 
-<div class="alert alert-info alert-icon">
-  <i class="icon-budicon-487"></i>
-Since Google Cloud requires you to add your Credit card information in order to use Storage Service. If you don't have credit card, you can mock CloudProvider service to use hard-coded responses to work with the tutorial. Take a look at this
-<a href="https://gist.github.com/imsingh/660ddabff0be9d4f4fc2022c7a5fb28f">Github Gist.</a>
-</div>
-
-### Managing Application State
-
-
-In this application, we are using NgRx to manage the state of our application. NgRx is based on Redux, which is very famous in React world for managing state.
-
-Let's briefly understand redux.
-
-In Redux, we manage our state in one place. In other words, we have just one object which stores/saves the state of our application. If at any point, we want to update the state, we `dispatch` an `Action` to a function, called as `reducer` function. This reducer function than update the state based on the action type.
-
-#### Creating Reducer
-
-By default, NgRx `Action` only has `type` property. But we need to send some information along with the type of action. So, We are going to extend the NgRx Action to suit our needs. We will name it _MediaAction_.
-
-Let's create a file `store.ts` in `/src/providers/store/` folder and do the following:
+So, to define this interface extension, you will create a file named `store.ts` inside a new directory called `store` (under `./src/providers/`) and add the following code to it:
 
 ```typescript
-import { Action } from "@ngrx/store";
+import {Action} from '@ngrx/store';
+
 export interface MediaAction extends Action {
   type: string;
   payload?: any;
 }
 ```
 
-Then we need the create different action for Media Events like canplay, playing and so on. Here is how we do it.
+Then, you will create different actions for the different media events (like `canplay`, `playing`, and so on). As such, update the `store.ts` file as follows:
 
 ```typescript
-import { Action } from "@ngrx/store";
+// ... import statement and MediaAction interface ...
 
-// ... Media Action interface here
-export const CANPLAY = "CANPLAY";
-export const LOADEDMETADATA = "LOADEDMETADATA";
-export const PLAYING = "PLAYING";
-export const TIMEUPDATE = "TIMEUPDATE";
-export const LOADSTART = "LOADSTART";
-export const RESET = "RESET";
+export const CANPLAY = 'CANPLAY';
+export const LOADEDMETADATA = 'LOADEDMETADATA';
+export const PLAYING = 'PLAYING';
+export const TIMEUPDATE = 'TIMEUPDATE';
+export const LOADSTART = 'LOADSTART';
+export const RESET = 'RESET';
 ```
 
-And Finally, we need a reducer function which recieves the `action` and do state update based on type of the action.
+After that, you will be able to implement the reducer function that receives and treats instances of `MediaAction`:
+
+@imsingh, please, check if my refactoring to your if/else statements make sense!
 
 ```typescript
-import { Action } from "@ngrx/store";
+// ... import, MediaAction, and consts ...
 
-// ... Media Action Interface and Action Constants here
 export function mediaStateReducer(state: any, action: MediaAction) {
   let payload = action.payload;
   switch (action.type) {
@@ -521,7 +340,6 @@ export function mediaStateReducer(state: any, action: MediaAction) {
       state = Object.assign({}, state);
       state.media = {};
       return state;
-
     default:
       state = {};
       state.media = {};
@@ -530,64 +348,94 @@ export function mediaStateReducer(state: any, action: MediaAction) {
 }
 ```
 
-Within each case, we are updating the `state`. It's also important to remember that, NgRx works with `immutable` object. In other words, each time reducer function is called, we need to create a new state object with the updated state. In our case, we are using `Object.assign` to create a new object.
+Within each `case` statement in the code above, you are generating a new `state` to your app. It's important to note that, as NgRx works with `immutable` objects, you need to create a new state object instead of updating the existing one. In this case, you are using `Object.assign` to create the new `state` object based on the current one.
 
-#### Configuring StoreModule
-
-In the `app.module.ts` file import the StoreModule from @ngrx/store and add it to NgModule's imports array as follows:
+Now, to register your reducer in your Ionic app, open the `app.module.ts` file and update it as follows:
 
 ```typescript
-StoreModule.forRoot({
-  appState: mediaStateReducer
-}),
+// ... other import statements ...
+
+@NgModule({
+  // ... declarations ...
+  imports: [
+    // ... other imported modules ...
+    StoreModule.forRoot({
+      appState: mediaStateReducer
+    }),
+    IonicModule.forRoot(MyApp)
+  ],
+  // ... bootstrap, entryComponents, and providers ...
+})
+export class AppModule {}
 ```
 
-You can now access the state using `appState` key anywhere in the application.
+Now, you will be able to access the current state using the `appState` key anywhere in your Ionic application.
 
-### Authentication
+## Authentication on Ionic Apps
 
-#### Auth0 Configuration
+To develop a secure app, you are going to rely on Auth0 to handle the authentication of your users. As such, you can <a href="https://auth0.com/signup" data-amp-replace="CLIENT_ID" data-amp-addparams="anonId=CLIENT_ID(cid-scope-cookie-fallback-name)">sign up for a free Auth0 account here</a>. Then, you will need to set up an Auth0 Application to represent your mobile app.
 
-Let's create a file `auth.config.ts` in `/src/providers/auth0/` folder and save the configuration as follows:
+### Installing Dependencies
+
+To secure your Ionic app with Auth0, you will have to install some Cordova plugins:
+
+```bash
+# replace {YOUR_PACKAGE_ID} with your app identifier and
+# replace YOUR_AUTH0_DOMAIN with your Auth0 Domain
+ionic cordova plugin add cordova-plugin-customurlscheme --variable URL_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_SCHEME={YOUR_PACKAGE_ID} --variable ANDROID_HOST={YOUR_AUTH0_DOMAIN} --variable ANDROID_PATHPREFIX=/cordova/{YOUR_PACKAGE_ID}/callback
+ionic cordova plugin add cordova-plugin-safariviewcontroller
+```
+
+> **Note:** You will have to replace `{YOUR_PACKAGE_ID}` above with the package id of your Ionic app. You can find this information in the `config.xml` file. There, you will see something like `<widget id="io.ionic.starter" ...`. In this case, your package id would be `io.ionic.starter`.
+
+> **Note:** Besides that, you will also need to replace `{YOUR_AUTH0_DOMAIN}` with your Auth0 domain. When creating your Auth0 account, you chose a subdomain like `ionic-audio-player`, or `your-name`, etc. In that case, your Auth0 domain would be `ionic-audio-player.auth0.com`. You can also find your subdomain on the upper right corner of your Auth0 dashboard, as shown in this screenshot:
+
+![Find your Auth0 subdomain.](https://cdn.auth0.com/blog/ionic-audio-player/find-auth0-domain.png)
+
+### Set Up an Auth0 Application
+
+1. Go to your [**Auth0 Dashboard**](https://manage.auth0.com/#/) and click the "[create a new application](https://manage.auth0.com/#/applications/create)" button. 
+2. Name your new app (e.g. "Ionic Audio Player"), select "Native App" as its type, and click the "Create" button.
+3. In the **Settings** tab of your new Auth0 app, add `file://*, http://localhost:8080/*` in the **Allowed Origins (CORS)** box.
+4. Still in the **Settings** tab, add `YOUR_PACKAGE_ID://YOUR_AUTH_DOMAIN/cordova/YOUR_PACKAGE_ID/callback`, to the **Allowed Callback URLs**.
+5. Add `http://localhost:8080` to the **Allowed Logout URLs**.
+6. Click the "Save Changes" button.
+
+> **Note:** On step 4, you will need to replace `YOUR_PACKAGE_ID` and `YOUR_AUTH_DOMAIN` with your own data (the same as used while installing your project dependencies: e.g. `io.ionic.starter` and `ionic-audio-player.auth0.com`).
+
+### Configuring Auth0 on Ionic
+
+Now, you will need to create a file called `auth.config.ts` in a new directory: `./src/providers/auth0/`. Inside that file, you can add the following code:
 
 ```typescript
 export const AUTH_CONFIG = {
-  // Needed for Auth0 (capitalization: ID):
-  clientID: "YOUR_CLIENT_ID",
-  // Needed for Auth0Cordova (capitalization: Id):
-  clientId: "YOUR_CLIENT_ID",
-  domain: "YOUR_AUTH_DOMAIN",
-  audience: "YOUR_API_IDENTIFIER",
-  packageIdentifier: "your.app.id" // config.xml widget ID, e.g., com.auth0.ionic
+  clientID: 'YOUR_CLIENT_ID',// Needed for Auth0 (capitalization: ID)
+  clientId: 'YOUR_CLIENT_ID', // needed for Auth0Cordova (capitalization: Id)
+  domain: 'YOUR_AUTH_DOMAIN',
+  packageIdentifier: 'your.app.id' // found on config.xml widget ID (e.g., com.auth0.ionic)
 };
 ```
 
-Let's demystify all these values:
+This list explains what these values mean:
 
-* _clientID/clientId_ : It's the ClientID that we got from Auth0 Dashboard.
+* `clientID` and `clientId`: They are the _Client Id_ property available in your Auth0 Application (the one created above).
+* `domain`: It's your Auth0 Domain.
+* `packageIdentifier`: It's the widget ID of your Ionic application. You have this in the `config.xml` file of your application, as described before.
 
-* _domain_ : It's your Auth0 Domain.
+Before continuing, make sure to replace `YOUR_CLIENT_ID`, `YOUR_AUTH_DOMAIN`, and `your.app.id` with your own data.
 
-* _audience_ : It's the API Identifier value.
+### Auth Service
 
-* _packageIdentifier_ : It's the widget ID of your Ionic application. You have this is `config.xml` file of your application.
-
-#### Auth Service
-
-Auth Service will have methods like login and logout to facilitate authentication process.
-
-Let's create `auth.service.ts` in the same `auth0` folder and add the following content.
+After creating your Auth0 account and defining the `auth.config.ts` file, you will need to define an authentication service in your Ionic app. As such, create a new file called `auth.service.ts` in the same `./src/providers/auth0/` directory and add the following content to it:
 
 ```typescript
-// src/services/auth.service.ts
-import { Injectable, NgZone } from "@angular/core";
-import { Storage } from "@ionic/storage";
-import { Subject } from "rxjs";
-
+import {Injectable, NgZone} from '@angular/core';
+import {Storage} from '@ionic/storage';
+import {Subject} from 'rxjs';
 // Import AUTH_CONFIG, Auth0Cordova, and auth0.js
-import { AUTH_CONFIG } from "./auth.config";
-import Auth0Cordova from "@auth0/cordova";
-import * as auth0 from "auth0-js";
+import {AUTH_CONFIG} from './auth.config';
+import Auth0Cordova from '@auth0/cordova';
+import * as auth0 from 'auth0-js';
 
 @Injectable()
 export class AuthService {
@@ -598,10 +446,11 @@ export class AuthService {
   loggedIn: boolean;
   loading = true;
   isLoggedIn$ = new Subject();
+
   constructor(public zone: NgZone, private storage: Storage) {
-    this.storage.get("profile").then(user => (this.user = user));
-    this.storage.get("access_token").then(token => (this.accessToken = token));
-    this.storage.get("expires_at").then(exp => {
+    this.storage.get('profile').then(user => (this.user = user));
+    this.storage.get('access_token').then(token => (this.accessToken = token));
+    this.storage.get('expires_at').then(exp => {
       this.loggedIn = Date.now() < JSON.parse(exp);
       this.loading = false;
       this.isLoggedIn$.next(this.loggedIn);
@@ -609,11 +458,10 @@ export class AuthService {
   }
 
   login() {
-    const promise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.loading = true;
       const options = {
-        scope: "openid profile offline_access",
-        audience: AUTH_CONFIG.audience
+        scope: 'openid profile offline_access',
       };
       // Authorize login request with Auth0: open login page and get auth results
       this.Client.authorize(options, (err, authResult) => {
@@ -622,42 +470,40 @@ export class AuthService {
           reject(err);
         } else {
           // Set access token & id token
-          this.storage.set("id_token", authResult.idToken)
-          this.storage.set("access_token", authResult.accessToken)
-          .then(()=> {
-            // Set logged in
-            this.loading = false;
-            this.loggedIn = true;
-            this.isLoggedIn$.next(this.loggedIn);
-            resolve();
-          });
+          this.storage.set('id_token', authResult.idToken);
+          this.storage.set('access_token', authResult.accessToken)
+            .then(() => {
+              // Set logged in
+              this.loading = false;
+              this.loggedIn = true;
+              this.isLoggedIn$.next(this.loggedIn);
+              resolve();
+            });
           this.accessToken = authResult.accessToken;
           // Set access token expiration
           const expiresAt = JSON.stringify(
             authResult.expiresIn * 1000 + new Date().getTime()
           );
-          this.storage.set("expires_at", expiresAt);
+          this.storage.set('expires_at', expiresAt);
           // Fetch user's profile info
           this.Auth0.client.userInfo(this.accessToken, (err, profile) => {
             if (err) {
               throw err;
             }
             this.storage
-              .set("profile", profile)
+              .set('profile', profile)
               .then(val => this.zone.run(() => (this.user = profile)));
           });
         }
       });
     });
-
-    return promise;
   }
 
   logout() {
-    this.storage.remove("profile");
-    this.storage.remove("access_token");
-    this.storage.remove("expires_at");
-    this.storage.remove("id_token");
+    this.storage.remove('profile');
+    this.storage.remove('access_token');
+    this.storage.remove('expires_at');
+    this.storage.remove('id_token');
     this.accessToken = null;
     this.user = {};
     this.loggedIn = false;
@@ -666,38 +512,65 @@ export class AuthService {
 }
 ```
 
-Let's first understand the properties of this AuthService:
+To better understand how the code above works, take a look into the following explanation:
 
-* _accessToken_ : This is the JWT Token that we get from Auth0. We use it to authenticate user.
-* _user_ : This property holds the user data like email, firstname, lastname and so on.
-* _loggedIn_ : This boolean holds the authentication state of the user.
-* _isLoggedIn$_ : This is RxJS Subject. Think of this as Reactive version of _loggedIn_ property. We will use it in our Angular Component to get User's Authentication State.
+* `accessToken`: This is the JWT Token that your users will get from Auth0. These tokens are used to identify the user.
+* `user`: This property holds the user data like `email`, `firstname`, `lastname`, and so on.
+* `loggedIn`: This boolean holds the authentication state of the user.
+* `isLoggedIn$`: This is a RxJS Subject. Think of this as the reactive version of the `loggedIn` property. You will use it in your Angular Component to get user's authentication state.
 
-Now, let's take a look at methods of the service:
+Now, take a look at the methods of the service above:
 
-* _constructor()_ : In constructor, we check if the user is previously authenticated or not. Based on it, we set the value of _this.user_ , _this.accessToken_ , _this.loggedIn_ based on it.
+* `constructor()`: In the constructor, you check if the user is previously authenticated or not. Based on it, you set the value of the `this.user`, `this.accessToken`, and `this.loggedIn` properties.
+* `login()`: In login method, you authorize the user and, if the user is successfully authenticated, you fetch their profile information. You save this information in the permanent storage via `@ionic/store` and also set the appropriate properties of the service to reflect the authentication state.
+* `logout()`: In logout method, you remove all the user information from permanent storage and set the properties of service to reflect the logout state.
 
-* _login()_ : In login method, we authorize the user and if user is successfully authenticated, we fetch the profile information of the user. We save this information in the permanent storage via @ionic/store and also set appropriate properties of service to reflect the authentication state.
+### Auth Callback
 
-* _logout()_ : In logout method, we remove all the user information from permanent storage and set the properties of service to reflect the logout state.
+To handle the redirection from Auth0 after authentication, you will have to update the `app.component.ts` file, as shown here:
 
-### Audio Player UI
+```typescript
+import { Component } from '@angular/core';
+import { Platform } from 'ionic-angular';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
+import Auth0Cordova from '@auth0/cordova';
 
-So far we have written code which is not related to UI of the application. In this section, we will design the UI and it's behavior.
-Our Application will look like following image.
+import { HomePage } from '../pages/home/home';
+@Component({
+  templateUrl: 'app.html'
+})
+export class MyApp {
+  rootPage:any = HomePage;
 
-<!--Image here -->
+  constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen) {
+    platform.ready().then(() => {
+      statusBar.styleDefault();
+      splashScreen.hide();
 
-#### Audio Player HTML
+      // Redirect back to app after authenticating
+      (window as any).handleOpenURL = (url: string) => {
+        Auth0Cordova.onRedirectUri(url);
+      };
+    });
+  }
+}
+```
 
-We have `home.html` file inside `/src/pages/home/` folder. We will add HTML of our player in it.
+## Developing the Audio Player UI on Ionic
 
-On the top we have a Navbar which contains the name of application and Logout button. This logout button will be shown if user is logged in.
+So far, you wrote code that is not related to the user interface (UI) of your application. In this section, you will design the UI and it's behavior. In the end, your application will look like this:
+
+![Audio Player Image](https://i.imgur.com/8zQftDW.png)
+
+### The Audio Player HTML
+
+Inside the `./src/pages/home/` directory, you will find the `home.html` file. In this file, you will add some HTML to define your player. As you will see, on the top, you will have a navigation bar which contains the name of the application and a log out button. This button will be shown if the user is logged in.
+
+Besides the header, you will have the `ion-content` with a log in button, your app's logo, and the list of media files:
+
 {% highlight html %}
 {% raw %}
-
-<!-- /src/pages/home/home.html -->
-
 <ion-header>
   <ion-navbar color="primary">
     <ion-title>Audio Player</ion-title>
@@ -706,15 +579,7 @@ On the top we have a Navbar which contains the name of application and Logout bu
     </ion-buttons>
   </ion-navbar>
 </ion-header>
-{% endraw %}
-{% endhighlight %}
 
-Then we have `ion-content` with Login button, App's Logo and list of media files. To also greet our user with `Hello` along with his/her _username_.
-
-{% highlight html %}
-{% raw %}
-<!-- /src/pages/home/home.html -->
-<!--... ion-header-->
 <ion-content padding>
   <p *ngIf="auth.loading" text-center>Loading...</p>
   <ng-template [ngIf]="!auth.loading || !loggedIn">
@@ -729,7 +594,7 @@ Then we have `ion-content` with Login button, App's Logo and list of media files
     <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
     <ng-container *ngFor="let file of files; let i = index">
       <ion-item text-wrap (click)="openFile(file, i)">
-        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
+        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name }}
         <p item-end *ngIf="currentFile.index === i">SELECTED</p>
         <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
       </ion-item>
@@ -740,14 +605,14 @@ Then we have `ion-content` with Login button, App's Logo and list of media files
 {% endraw %}
 {% endhighlight %}
 
-In the footer of our Ionic Application, we have two `ion-toolbar`.
+In the footer of your Ionic application, you will have two `ion-toolbar`.
 
-In the first `ion-toolbar`, we have a seekbar created with ion-range. It allows user to change the current time of playing audio file. Here is HTML for that :
+In the first `ion-toolbar`, you will have a `seekbar` created with `ion-range`. This item allows users to change the current time of the audio file being played. Here it is HTML for that:
+
 {% highlight html %}
 {% raw %}
-
-<!-- ... ion-header and ion-content -->
-<ion-footer>
+<!-- ... ion-header and ion-content ... -->
+<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">>
  <ion-toolbar color="primary">
     <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
       name="seekbar">
@@ -755,19 +620,20 @@ In the first `ion-toolbar`, we have a seekbar created with ion-range. It allows 
       <ion-label color="light" range-right>{{ state.duration }}</ion-label>
     </ion-range>
   </ion-toolbar>
-<!--Other components-->
 </ion-footer>
 {% endraw %}
 {% endhighlight %}
 
-And then we have rest of playback controls inside another `ion-toolbar`, as follows:
+In the second `ion-toolbar`, you will have the rest of the playback controls, as follows:
 
 {% highlight html %}
 {% raw %}
-
 <!-- ... ion-header and ion-content -->
-<ion-footer>
-<!-- ... Seekbar control here-->
+
+<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">>
+
+  <!-- ... seekbar control here-->
+
  <ion-toolbar color="primary" padding>
     <ion-grid>
       <ion-row align-items-center id="media-controls">
@@ -785,92 +651,22 @@ And then we have rest of playback controls inside another `ion-toolbar`, as foll
         </button>
       </ion-row>
     </ion-grid>
-
   </ion-toolbar>
 </ion-footer>
 {% endraw %}
 {% endhighlight %}
 
-This is how our complete UI is constructed:
+[You can find the final version of this file here](https://github.com/auth0-blog/ionic-audio-player/blob/master/src/pages/home/home.html).
 
-{% highlight html %}
-{% raw %}
+### Styling the Audio Player
 
-<!-- /src/pages/home/home.html -->
-<ion-header>
-  <ion-navbar color="primary">
-    <ion-title>Audio Player</ion-title>
-    <ion-buttons end>
-      <button *ngIf="loggedIn" ion-button icon (click)="logout()">Logout</button>
-    </ion-buttons>
-  </ion-navbar>
-</ion-header>
-
-
-<ion-content padding>
-  <p *ngIf="auth.loading" text-center>Loading...</p>
-  <ng-template [ngIf]="!auth.loading || !loggedIn">
-    <div padding id="app-section" text-center>
-      <ion-icon color="primary" name="musical-notes"></ion-icon>
-      <h2 id="app-title">Audio Player</h2>
-      <button outline ion-button block color="primary" *ngIf="!loggedIn" (click)="login()">Log In</button>
-    </div>
-  </ng-template>
-
-  <ion-list *ngIf="files.length && loggedIn">
-    <ion-list-header>Hello {{auth.user.name}}</ion-list-header>
-    <ng-container *ngFor="let file of files; let i = index">
-      <ion-item text-wrap (click)="openFile(file, i)">
-        <ion-icon color="primary" item-start name="musical-note"></ion-icon>{{ file.name | trimName }}
-        <p item-end *ngIf="currentFile.index === i">SELECTED</p>
-        <ion-icon item-end name="play" *ngIf="currentFile.index !== i"></ion-icon>
-      </ion-item>
-    </ng-container>
-  </ion-list>
-
-</ion-content>
-
-<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
-  <ion-toolbar color="primary">
-    <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
-      name="seekbar">
-      <ion-label color="light" range-left>{{ state.time }}</ion-label>
-      <ion-label color="light" range-right>{{ state.duration }}</ion-label>
-    </ion-range>
-
-  </ion-toolbar>
-  <ion-toolbar color="primary" padding>
-    <ion-grid>
-      <ion-row align-items-center id="media-controls">
-        <button clear ion-col ion-button [disabled]="isFirstPlaying()" (click)="previous()">
-          <ion-icon color="light" name="skip-backward"> </ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!state.playing" (click)="play()">
-          <ion-icon color="light" name="play"></ion-icon>
-        </button>
-        <button clear ion-col ion-button *ngIf="!!state.playing" (click)="pause()">
-          <ion-icon color="light" name="pause"></ion-icon>
-        </button>
-        <button clear ion-col ion-button [disabled]="isLastPlaying()" (click)="next()">
-          <ion-icon color="light" name="skip-forward"></ion-icon>
-        </button>
-      </ion-row>
-    </ion-grid>
-
-  </ion-toolbar>
-</ion-footer>
-{% endraw %}
-{% endhighlight %}
-
-#### Styling Player's UI
-
-Just to improve look and feel of our app. We will do some minor styling in `home.scss` file placed inside `/src/pages/home/` directory as shown below:
+Just to improve the look and feel of your app, you will do some minor styling in the `home.scss` file (you can find it under `./src/pages/home/`), as shown below:
 
 ```scss
 page-home {
   #app-section {
     #app-title {
-      color: color($colors, "primary");
+      color: color($colors, 'primary');
       text-transform: uppercase;
     }
     ion-icon {
@@ -887,89 +683,157 @@ page-home {
 }
 ```
 
-#### Logic behind Audio UI
+### The Audio Player UI Controller
 
-Let's first understand the app flow in steps:
+To help you control your audio player user interface, you will implement a controller responsible for the following things:
 
-1.  When App is opened, We will first check if user is authenticated or not.
-2.  If user is not authenticated, we will show Authentication UI.
-3.  After Authentication, We will fetch the media file from Google Cloud and show the Audio Player.
-4.  Now User can perform media action like play, pause or switch media file along with logging out of the application.
-5.  If User logout, we clear the authentication state from the storage and logout the user and show Login UI.
+1.  When the app is opened, it will check if the user is authenticated or not.
+2.  If the user is not authenticated, it will show the authentication UI.
+3.  After the authentication process, it will fetch the media file from your mock service and show in the audio player.
+4.  Then, it will enable your users to perform media actions like play, pause, or switch media file. It will also enable users to log in and log out.
+5.  If the user logs out, it will clear the authentication state from the storage and show the login UI.
 
-We are using the default HomePage for Audio Player, that we get using `ionic start` command.
+As you are using the default `HomePage` to implement your audio player, you will implement most of the logic inside the `HomePage` class. So, throughout the following sections, you will implement the following methods:
 
-We are creating `page-home` component using Angular's `@Component` decorator. To enhance the User experience we have added tiny animations when audio player goes from `inactive` to `active` state. Basically, when user starts playing the audio file. We show music controls to the user.
+- `constructor`: this method will create an instance of `HomePage` and subscribe to the `isLoggedIn` subject;
+- `login`: this method will enable users to login;
+- `getDocuments`: this method will load the music files;
+- `presentLoading`: this method will present a nice loading screen;
+- `ionViewWillLoad`: this method will add listeners to media events to update the screen;
+- `openFile`: this method will fetch the music URL and pass it to `playStream`.
+- `resetState`: this method will reset the state of the current music;
+- `playStream`: this method will subscribe to `audioProvider.playStream` so it can dispatch actions to the reducer;
+- `pause`: this method will allow users to pause the playback;
+- `play`: this method will allow users to start the playback again;
+- `stop`: this method will allow users to stop the playback;
+- `next`: this method will allow users to move to the next music;
+- `previous`: this method will allow users to the previous music;
+- `isFirstPlaying`: this method will be used to block the previous button;
+- `isLastPlaying`: this method will be use to block the next button;
+- `onSeekStart` and `onSeekEnd`: these methods will be used while using the seek feature;
+- `logout`: this method will allow users to log out;
+- `reset`: this method will reset the state of the Ionic app;
+
+However, before focusing on the implementation of these methods, you can add some cool animations to enhance the UX of your app.
+These animations will appear when the audio player switch between the `inactive` and `active` states. This basically means that, when user starts playing the audio file, your app will show music controls to the user.
+
+To do this, open the `./src/pages/home/home.ts` file and replace its code with this:
 
 ```typescript
-// ... import statements
+import {Component, ViewChild} from '@angular/core';
+import {trigger, state, style, animate, transition } from '@angular/animations';
+import {NavController, NavParams, Navbar, Content, LoadingController} from 'ionic-angular';
+import {AudioProvider} from '../../providers/audio/audio';
+import {FormControl} from '@angular/forms';
+import {CANPLAY, LOADEDMETADATA, PLAYING, TIMEUPDATE, LOADSTART, RESET} from '../../providers/store/store';
+import {Store} from '@ngrx/store';
+import {CloudProvider} from '../../providers/cloud/cloud';
+import {AuthService} from '../../providers/auth0/auth.service';
+import {pluck, filter, map, distinctUntilChanged} from 'rxjs/operators';
+
 @Component({
-  selector: "page-home",
-  templateUrl: "home.html",
+  selector: 'page-home',
+  templateUrl: 'home.html',
   animations: [
-    trigger("showHide", [
+    trigger('showHide', [
       state(
-        "active",
+        'active',
         style({
           opacity: 1
         })
       ),
       state(
-        "inactive",
+        'inactive',
         style({
           opacity: 0
         })
       ),
-      transition("inactive => active", animate("250ms ease-in")),
-      transition("active => inactive", animate("250ms ease-out"))
+      transition('inactive => active', animate('250ms ease-in')),
+      transition('active => inactive', animate('250ms ease-out'))
     ])
   ]
 })
-export class HomePage {}
+export class HomePage { }
 ```
 
-In the constructor of `HomePage`, we are listening to Login events via Auth Service. If the user is logged In, set the loggedIn variable and call `getDocuments` Method.
+> Don't mind all these unused imports, you will need them really soon.
+
+### The `constructor`
+
+Now, you will do three things:
+
+1. You will define the properties that will help you control the audio player.
+2. You will inject all components that your audio player will use to read music, manage authentication, etc.
+3. And you will `subscribe` to the `isLoggedIn$` subject.
+
+Therefore, update the definition of the `HomePage` class as follows:
 
 ```typescript
-// import statements
+// ... imports statements ...
+
+@Component({
+  // ... selector, templateUrl, etc ...
+})
 export class HomePage {
-  constructor(...) {
+  files: any = [];
+  seekbar: FormControl = new FormControl("seekbar");
+  state: any = {};
+  onSeekState: boolean;
+  currentFile: any = {};
+  displayFooter: string = "inactive";
+  loggedIn: Boolean;
+  @ViewChild(Navbar) navBar: Navbar;
+  @ViewChild(Content) content: Content;
+
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    public audioProvider: AudioProvider,
+    public loadingCtrl: LoadingController,
+    public cloudProvider: CloudProvider,
+    private store: Store<any>,
+    public auth: AuthService
+  ) {
     this.auth.isLoggedIn$.subscribe((isLoggedIn: any) => {
-        this.loggedIn = isLoggedIn;
-        if (isLoggedIn) {
-          this.getDocuments();
-        }
+      this.loggedIn = isLoggedIn;
+      if (isLoggedIn) {
+        this.getDocuments();
+      }
     });
   }
 }
 ```
 
-If User is not logged In, we show a Login Button. When user clicks on it. It fires `login` method. We call Auth Service' Login method and Authenticate the User.
+> Don't worry about the `getDocuments` method. You will implement it in no time.
+
+### The `login` Method
+
+Then, to enable users to login, you will add the following method to `HomePage`:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor here
+  
+  // ... constructor ...
+  
   login() {
-    this.auth
-      .login()
-      .then(() => {
-        console.log("Successful Login");
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    this.auth.login()
+      .then(() => { console.log('Successful Login'); })
+      .catch(error => { console.log(error); });
   }
-  // ... other methods
 }
 ```
 
-When user is authenticated, `getDocuments` method is called. It shows as nice Loader on screen using `presentLoading` method and fetch files via cloudProvider's `getFiles` method as shown below:
+### The `getDocuments` Method
+
+Now, you will implement the `getDocuments` method with a nice loader on the screen (by using the `presentLoading` method) and fetch files via the `cloudProvider`'s `getFiles` method, as shown below:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+
+  // ...constructor and other methods ...
+
   getDocuments() {
     let loader = this.presentLoading();
     this.cloudProvider.getFiles().subscribe(files => {
@@ -977,36 +841,48 @@ export class HomePage {
       loader.dismiss();
     });
   }
+
+  presentLoading() {
+    let loading = this.loadingCtrl.create({
+      content: 'Loading Content. Please Wait...'
+    });
+    loading.present();
+    return loading;
+  }
 }
 ```
 
-In Ionic, we have lifecylehooks just like Angular. One such life cycle hook is `ionViewWillLoad`. We are listening to changes in media state using NgRx store inside this lifecyclehook method.
+### The `ionViewWillLoad` Method
 
-We are assigning the state of media to `this.state` property. We also update the `ion-content` if we are displaying ion-footer using `canplay` value. Along with that, we update seekbar based on media's `currentTime`.
+As you may know, in Ionic, just like in Angular, you have lifecycle hooks. One these lifecycle hooks is the `ionViewWillLoad` one. You will use this hook to add listeners to media state changes. So, when changes are detected, you can update your screen.
+
+The listening process will be achieved by using NgRx store inside this lifecycle hook method:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+
+  // ...constructor and other methods ...
+
   ionViewWillLoad() {
-    this.store.select("appState").subscribe((value: any) => {
+    this.store.select('appState').subscribe((value: any) => {
       this.state = value.media;
     });
 
     // Resize the Content Screen so that Ionic is aware of footer
     this.store
-      .select("appState")
-      .pipe(pluck("media", "canplay"), filter(value => value === true))
-      .subscribe(value => {
-        this.displayFooter = "active";
+      .select('appState')
+      .pipe(pluck('media', 'canplay'), filter(value => value === true))
+      .subscribe(() => {
+        this.displayFooter = 'active';
         this.content.resize();
       });
 
     // Updating the Seekbar based on currentTime
     this.store
-      .select("appState")
+      .select('appState')
       .pipe(
-        pluck("media", "timeSec"),
+        pluck('media', 'timeSec'),
         filter(value => value !== undefined),
         map((value: any) => Number.parseInt(value)),
         distinctUntilChanged()
@@ -1015,22 +891,21 @@ export class HomePage {
         this.seekbar.setValue(value);
       });
   }
+}
 ```
 
-Whenever user clicks on the Media File. `openFile` method is fired. Then we fire playStream method with that `file.url`, which is the public url of media file.
+### The `openFile` Method
 
-URL of media file looks like following:
-`https://storage.googleapis.com/${file.bucket}/${file.name}`
+Whenever the user clicks on a media file, the `openFile` method will be fired. Then, this method will fire the `playStream` method with the `url` of the `file` chosen.
 
-`${file.bucket}` is the Google Cloud Bucket where file is stored.<br/>
-`${file.name}` is the name of the file.
-
-We get all this information from our <a href="#cloud-response" target="_self">backend</a>.
+In this article, this data will come from the mock service that you implemented before. On a subsequent article, you will refactor this class to fetch information from a backend API.
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+
+  // ...constructor and other methods ...
+
   openFile(file, index) {
     this.currentFile = { index, file };
     this.playStream(file.url);
@@ -1038,12 +913,16 @@ export class HomePage {
 }
 ```
 
-This `playStream` method first reset the current media state via `resetState` method.
+### The `resetState` Method
+
+The `playStream` method that you will implement, first need to reset the current media state via the `resetState` method. So, you can implement it as follows:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   resetState() {
     this.audioProvider.stop();
     this.store.dispatch({ type: RESET });
@@ -1051,101 +930,129 @@ export class HomePage {
 }
 ```
 
-`resetState` method stop the currently running media file and dispatch `RESET` action to reset media state.
+To do this, the `resetState` method stops the currently running media file and dispatch the `RESET` action to reset the media state.
 
-Then `playstream` method fires playStream method of `AudioProvider`, which returns an Observable. We subscribe to that Observable and start listening Media Events like canplay, playing etc.
-Based on each particular event, we dispatch a store action with appropriate payload. Basically we are storing media information like, current time, duration of media and so on.
+### The `playStream` Method
+
+Then, the `playstream` method can fire the `playStream` method of your `AudioProvider`. This method on the provider returns an observable that you will use to subscribe and start listening media events like `canplay`, `playing`, etc.
+
+Based on each particular event, you will dispatch a store action with the appropriate payload. Basically, these actions will store media information like current time and duration of the media.
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   playStream(url) {
     this.resetState();
     this.audioProvider.playStream(url).subscribe(event => {
       const audioObj = event.target;
-      if (event.type === "canplay") {
-        this.store.dispatch({ type: CANPLAY, payload: { value: true } });
-      } else if (event.type === "loadedmetadata") {
-        this.store.dispatch({
-          type: LOADEDMETADATA,
-          payload: {
-            value: true,
-            data: {
-              time: this.audioProvider.formatTime(
-                audioObj.duration * 1000,
-                "HH:mm:ss"
-              ),
-              timeSec: audioObj.duration,
-              mediaType: "mp3"
+
+      switch (event.type) {
+        case 'canplay':
+          return this.store.dispatch({ type: CANPLAY, payload: { value: true } });
+
+        case 'loadedmetadata':
+          return this.store.dispatch({
+            type: LOADEDMETADATA,
+            payload: {
+              value: true,
+              data: {
+                time: this.audioProvider.formatTime(
+                  audioObj.duration * 1000,
+                  'HH:mm:ss'
+                ),
+                timeSec: audioObj.duration,
+                mediaType: 'mp3'
+              }
             }
-          }
-        });
-      } else if (event.type === "playing") {
-        this.store.dispatch({ type: PLAYING, payload: { value: true } });
-      } else if (event.type === "pause" || event.type === "ended") {
-        this.store.dispatch({ type: PLAYING, payload: { value: false } });
-      } else if (event.type === "timeupdate") {
-        this.store.dispatch({
-          type: TIMEUPDATE,
-          payload: {
-            timeSec: audioObj.currentTime,
-            time: this.audioProvider.formatTime(
-              audioObj.currentTime * 1000,
-              "HH:mm:ss"
-            )
-          }
-        });
-      } else if (event.type === "loadstart") {
-        this.store.dispatch({ type: LOADSTART, payload: { value: true } });
+          });
+
+        case 'playing':
+          return this.store.dispatch({ type: PLAYING, payload: { value: true } });
+
+        case 'pause':
+          return this.store.dispatch({ type: PLAYING, payload: { value: false } });
+
+        case 'timeupdate':
+          return this.store.dispatch({
+            type: TIMEUPDATE,
+            payload: {
+              timeSec: audioObj.currentTime,
+              time: this.audioProvider.formatTime(
+                audioObj.currentTime * 1000,
+                'HH:mm:ss'
+              )
+            }
+          });
+
+        case 'loadstart':
+          return this.store.dispatch({ type: LOADSTART, payload: { value: true } });
       }
     });
   }
 }
 ```
 
-So once `playStream` method is fired, media playback is initiated. User might want to pause the playback. For that we have `pause` method which basically calls AudioProvider's pause method.
+### The `pause` Method
+
+Once `playStream` method is fired, the media playback is initiated. As such, your users might want to pause the playback. For that, you will implement the `pause` method as follows:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   pause() {
     this.audioProvider.pause();
   }
 }
 ```
 
-It's also true that, User also might want to replay the media again. For that we have a `play` method. It's important to not that we can't use playStream method here because it resets the media state and start playing audio file from beginning.
+### The `play` Method
+
+It's also true that users might want to start playing the media again. For that, you will add the following:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   play() {
     this.audioProvider.play();
   }
 }
 ```
 
-To stop the media, we have `stop` method, which calls the AudioProvider's stop method to stop media playback.
+### The `stop` Method
+
+Then, to stop the media, you will add the following method:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   stop() {
     this.audioProvider.stop();
   }
 }
 ```
 
-We are treating all the files in Google Cloud as Playlist. So we have `next` method to play next track in the playlist.
+### The `next` Method
+
+Also, to let your users move to the next music, you will define the following method:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   next() {
     let index = this.currentFile.index + 1;
     let file = this.files[index];
@@ -1154,12 +1061,16 @@ export class HomePage {
 }
 ```
 
-Similarly, We have `previous` method to play previous track.
+### The `previous` Method
+
+Similarly, you will need to provide a method to play the previous track:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   previous() {
     let index = this.currentFile.index - 1;
     let file = this.files[index];
@@ -1168,12 +1079,16 @@ export class HomePage {
 }
 ```
 
-We have a two helper methods to check if first or last track from playlist is playing.
+### The `isFirstPlaying` and `isLastPlaying` Methods
+
+Then, you will need two helper methods to check if the music being played is the first or the last track from the playlist. You use these methods to disable and enable the UI buttons:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   isFirstPlaying() {
     return this.currentFile.index === 0;
   }
@@ -1184,14 +1099,18 @@ export class HomePage {
 }
 ```
 
-We allow user to do seek operation. When user initiate the seek operation, it fires `onSeekStart` method. In it, we check if file is currently being played or not and save that information. Then we pause the audio file.
+### The `onSeekStart` and `onSeekEnd` Methods
 
-When seek operation ends we fire `onSeekEnd` method, and in it we seek to user's selected time. If file was being played before seeking, we resume the playback.
+Also, you will want to enable your users to do seek operations. So, when the user initiate the seek operation, it will fire the `onSeekStart` method. In it, it will check if the file is currently being played or not and save that information. Then, it will pause the audio file.
+
+When the seek operation ends, it will fire the `onSeekEnd` method and, in it, you can fetch time select by the user. If file was being played before seeking, you resume the playback:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   onSeekStart() {
     this.onSeekState = this.state.playing;
     if (this.onSeekState) {
@@ -1210,16 +1129,21 @@ export class HomePage {
 }
 ```
 
-Finally we also allow user to logout via `logout` method. Along with that we have `reset` method to reset whole appliation.
+### The `logout` and `reset` Methods
+
+Finally, you will also allow users to log out via the `logout` method. Along with that, you will have a `reset` method to reset whole application:
 
 ```typescript
-// import statements
+// ... import statements and @Component declaration ...
 export class HomePage {
-  // ...constructor and other methods
+  
+  // ...constructor and other methods ...
+
   logout() {
     this.reset();
     this.auth.logout();
   }
+
   reset() {
     this.resetState();
     this.currentFile = {};
@@ -1228,72 +1152,32 @@ export class HomePage {
 }
 ```
 
-#### Set up redirect
+### Updating the `AppModule` Class
 
-We also need to handle the redirection after user is authenticated. We will do this in `app.component.ts` file.
-
-```typescript
-import { Component } from "@angular/core";
-import { Platform } from "ionic-angular";
-import { StatusBar } from "@ionic-native/status-bar";
-import { SplashScreen } from "@ionic-native/splash-screen";
-
-// Import Auth0Cordova
-import Auth0Cordova from "@auth0/cordova";
-
-import { HomePage } from "../pages/home/home";
-@Component({
-  templateUrl: "app.html"
-})
-export class MyApp {
-  rootPage: any = HomePage;
-
-  constructor(
-    platform: Platform,
-    statusBar: StatusBar,
-    splashScreen: SplashScreen
-  ) {
-    platform.ready().then(() => {
-      statusBar.styleDefault();
-      splashScreen.hide();
-
-      // Redirect back to app after authenticating
-      (window as any).handleOpenURL = (url: string) => {
-        Auth0Cordova.onRedirectUri(url);
-      };
-    });
-  }
-}
-```
-
-#### Updating app.module.ts
-
-We need to important all the required libraries inside our `app.module.ts` file as shown below:
+The final steps, before being able to use your app for the first time, starts with importing all the required libraries inside the `app.module.ts` file:
 
 ```typescript
-import { BrowserModule } from "@angular/platform-browser";
-import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
-import { ErrorHandler, NgModule } from "@angular/core";
-import { HttpClientModule } from "@angular/common/http";
-import { JwtModule, JWT_OPTIONS } from "@auth0/angular-jwt";
-import { StoreModule } from "@ngrx/store";
-import { IonicApp, IonicErrorHandler, IonicModule } from "ionic-angular";
-import { SplashScreen } from "@ionic-native/splash-screen";
-import { StatusBar } from "@ionic-native/status-bar";
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ErrorHandler, NgModule } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+import { JwtModule, JWT_OPTIONS } from '@auth0/angular-jwt';
+import { StoreModule } from '@ngrx/store';
+import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
+import { SplashScreen } from '@ionic-native/splash-screen';
+import { StatusBar } from '@ionic-native/status-bar';
 
-import { mediaStateReducer } from "../providers/store/store";
-import { AudioProvider } from "../providers/audio/audio";
-import { CloudProvider } from "../providers/cloud/cloud";
+import { mediaStateReducer } from '../providers/store/store';
+import { AudioProvider } from '../providers/audio/audio';
+import { CloudProvider } from '../providers/cloud/cloud';
 
-import { MyApp } from "./app.component";
-import { HomePage } from "../pages/home/home";
-import { AuthService } from "../providers/auth0/auth.service";
-import { IonicStorageModule, Storage } from "@ionic/storage";
+import { MyApp } from './app.component';
+import { HomePage } from '../pages/home/home';
+import { AuthService } from '../providers/auth0/auth.service';
+import { IonicStorageModule, Storage } from '@ionic/storage';
 ```
 
-We need a factory function to configure `angular-jwt` library, as shown below. In the factory, we return an object with one method to get `access_token` from storage and an array to add `whitelist` domain.
-
-`angular-jwt` will send the `access_token` to only whitelisted domains and will ignore rest of domains. In our case, whitelisted domain is our backend app domain.
+Continues with the definition of a factory function to configure the `angular-jwt` library:
 
 ```typescript
 // ... import statements
@@ -1309,11 +1193,12 @@ export function jwtOptionsFactory(storage) {
 }
 ```
 
-Then we add all the required `declarations`, `imports`, `providers` in the NgModule as shown below. Take a closer look at how we configured `JwtModule`.
+@imsingh, is the `whitelistedDomains` needed now that we won't use Webtask in this article?
+
+Then, ends with you having to define all the required `declarations`, `imports`, `providers` in the `NgModule`, as shown here:
 
 ```typescript
-// ... import statements
-// ... jwtOptionsFactory function
+// ... import statements and jwtOptionsFactory function ...
 @NgModule({
   declarations: [MyApp, HomePage],
   imports: [
@@ -1347,189 +1232,20 @@ Then we add all the required `declarations`, `imports`, `providers` in the NgMod
 export class AppModule {}
 ```
 
-#### Building and running the app
+> Take a closer look at how the `JwtModule` is configured.
 
-You can directly run the app via following ionic command.
+## Building and Running the Ionic Audio Player
 
-For iOS app,
+After implementing your whole app, you can directly run it via following `ionic` commands:
 
-```
- $ ionic cordova run ios
-```
+```bash
+# for the iOS app
+ionic cordova run ios
 
-For Android app,
-
-```
-$ ionic cordova run android
+# for the android app
+ionic cordova run android
 ```
 
-This is how app looks like:
-![Audio Player Image](https://i.imgur.com/8zQftDW.png)
+## Conclusion and Next Steps
 
-## Backend
-
-We are storing our Audio Files on Google Cloud Storage. We need to create Google Cloud Account and Configure it.
-
-<div class="alert alert-info alert-icon">
-  <i class="icon-budicon-487"></i>
-  Google Cloud Provides a Free Tier account. But in order to use it, you need to have credit/debit card. You can get more information <a href="https://cloud.google.com/free/docs/frequently-asked-questions">here.</a>
-</div>
-### Create and configure Google Cloud
-
-1.  Go to <https://cloud.google.com/> and Register with your Google account.
-2.  Open Google Cloud Console and then Create a New Project.
-3.  Now we have to create a Service account key, which will allow our backend app to access Google Cloud Storage via Google APIs.
-    * Click on **APIs & Services** sidemenu and then click on **Credentials**.
-    * Then click on **Create credentials** drop down and select **Service account key**.
-    * Fill Service Account Name and Select **Storage** > **Storage Object Viewer** as **Role**. It's very important, because we only need to fetch the list of media files. That's why we only need that Role.
-    * Select Key type as **JSON** and click on _Create_.
-4.  It will download a _.json_ file on your computer. Save this file somewhere secure, we need that for our backend.
-
-### Uploading Files on Google Cloud
-
-Now that we have configured our Google Cloud Storage. We need to upload files to Google Cloud Storage.
-
-1.  In Google Cloud Dashboard, go to **Storage** > **Browser**.
-2.  Create a New Bucket. Save the name of the bucket somewhere, we need it in our Backend app.
-3.  Now upload the content to that bucket, that you want inside your Audio Player.
-4.  Also make sure that your files are public.
-
-> For the sake of blog post, we are making our media files public. In general you wouldn't want to do that.
-
-### Accessing Google Cloud
-
-We are going to use Webtask to create our backend. It's fairly simple to use it. Login at <https://webtask.io> and in sidemenu click on **+** icon to create a new webtask.
-Then, it will open Webtask Editor for you. We will write our code using that editor.
-
-First we will add all the required Node Modules to our Webtask as follows:
-
-* On the top left of the webtask Editor, you will see a small wrench icon like this <img src="data:image/svg+xml;utf8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pgo8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMTguMC4wLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogNi4wMCBCdWlsZCAwKSAgLS0+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiBpZD0iQ2FwYV8xIiB4PSIwcHgiIHk9IjBweCIgdmlld0JveD0iMCAwIDMwMy40NzcgMzAzLjQ3NyIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzAzLjQ3NyAzMDMuNDc3OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgd2lkdGg9IjE2cHgiIGhlaWdodD0iMTZweCI+CjxwYXRoIGQ9Ik0yOTguNjA0LDY0LjIwOWwtNDkuOTc4LDQ5Ljk3OUwyMDQuOTA3LDk4LjU3TDE4OS4yOSw1NC44NTJsNDkuOTc5LTQ5Ljk3OWMtMzIuNzkxLTEwLjk3LTcwLjQxOC0zLjQyLTk2LjUyOSwyMi42OTIgIGMtMjUuNjI5LDI1LjYyOS0zMy4zNzMsNjIuMzQ5LTIzLjI4MSw5NC43MDRjLTEuMzU5LDEuMDctMi42NzYsMi4yMjItMy45MywzLjQ3NkwxMi44ODQsMjI4LjM4OSAgYy0xNy4xNzgsMTcuMTc3LTE3LjE3OCw0NS4wMjcsMCw2Mi4yMDVjMTcuMTc4LDE3LjE3OCw0NS4wMjksMTcuMTc4LDYyLjIwNywwbDEwMi42NDUtMTAyLjY0NWMxLjI1NC0xLjI1NCwyLjQwNC0yLjU3LDMuNDc1LTMuOTI5ICBjMzIuMzU1LDEwLjA5Miw2OS4wNzQsMi4zNDcsOTQuNzAzLTIzLjI4MkMzMDIuMDI0LDEzNC42MjYsMzA5LjU3NSw5Ny4wMDEsMjk4LjYwNCw2NC4yMDl6IiBmaWxsPSIjMDAwMDAwIi8+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+CjxnPgo8L2c+Cjwvc3ZnPgo=" />. Click on it and it will open a drop down menu.
-* Now click on `NPM Modules`. It will be open a pane in left side of editor. Add the following modules using that pane : `express`, `body-parser`, `webtask-tools`, `@google-cloud/storage`, `express-jwt`, `express-jwt-authz` and `jwks-rsa`.
-
-Let's write our code in the editor now. First, import the required libraries in the editor as follows:
-
-```javascript
-const express = require("express");
-const Webtask = require("webtask-tools");
-const bodyParser = require("body-parser");
-const Storage = require("@google-cloud/storage");
-const jwt = require("express-jwt");
-const jwtAuthz = require("express-jwt-authz");
-const jwks = require("jwks-rsa");
-```
-
-Now copy the content of Service Account Key _.json_ file and assign it to following variable.
-
-```javascript
-// ... require libraries
-const apiKey = {...} // Service accont key here
-```
-
-Now create a `config` object with Google project id and this `apiKey` as follows:
-
-```javascript
-// ... require libraries
-const config = {
-  projectId: "GOOGLE_PROJECT_ID",
-  credentials: apiKey
-};
-```
-
-and create a Google Storage instance with our Google cloud storage bucket `name` as follows:
-
-```javascript
-// ... require libraries
-const myAppStorage = Storage(config);
-const audio_bucket = myAppStorage.bucket("auth0-audio-app");
-```
-
-Here `auth0-audio-app` is the name of our bucket.
-
-Now configure Authentication in our application.
-
-```javascript
-// ... require libraries
-const jwtCheck = jwt({
-    secret: jwks.expressJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: "https://{AUTH0_DOMAIN}/.well-known/jwks.json"
-    }),
-    audience: 'API_IDENTIFIER,
-    issuer: "https://{AUTH0_DOMAIN}/",
-    algorithms: ['RS256']
-});
-```
-
-Replace `{AUTH_DOMAIN}` with your Auth0 Domain and `API_IDENTIFIER` with your API Identifier(Audience) value.
-
-Now create express app and `/media` endpoint for getting media files in our mobile application.
-
-```javascript
-// ... require libraries
-const app = express();
-
-app.use(bodyParser.json());
-
-app.get("/", function(req, res) {
-  res.sendStatus(200);
-});
-
-app.get("/media", jwtCheck, function(req, res) {
-  audio_bucket.getFiles(
-    {
-      delimiter: "/",
-      autoPaginate: false,
-      prefix: "media/"
-    },
-    (err, files, nextQuery, apiResponse) => {
-      res.send({ apiResponse: apiResponse });
-    }
-  );
-});
-```
-
-Basically, in `/media` route, we are fetching all the files from our Google Storage bucket and sending that to our application. The response looks like following:
-
-```javascript
-{
-  apiResponse: {
-    kind: "storage#objects",
-    items: []
-  }
-}
-```
-
-<a name="cloud-response"></a>
-Here is an example item:
-
-```javascript
-{
-  kind: "storage#object",
-  id: "auth0-audio-app/media/01 Jhoolay Laal.mp3/1523854489009243",
-  selfLink: "https://www.googleapis.com/storage/v1/b/auth0-audio-app/o/media%2F01%20Jhoolay%20Laal.mp3",
-  name: "media/01 Jhoolay Laal.mp3",
-  bucket: "auth0-audio-app",
-  generation: "1523854489009243",
-  metageneration: "2",
-  contentType: "audio/mp3",
-  timeCreated: "2018-04-16T04:54:48.993Z",
-  updated: "2018-04-16T06:21:53.045Z",
-  storageClass: "MULTI_REGIONAL",
-  timeStorageClassUpdated: "2018-04-16T04:54:48.993Z",
-  size: "16570328",
-  md5Hash: "kA6qr0i42l2sS+XD7rL8PQ==",
-  mediaLink: "https://www.googleapis.com/download/storage/v1/b/auth0-audio-app/o/media%2F01%20Jhoolay%20Laal.mp3?generation=1523854489009243&alt=media",
-  crc32c: "qlnTOg==",
-  etag: "CNv4hqyAvtoCEAI="
-},
-```
-
-Finally export the app as follows, which is required for Webtask:
-
-```javascript
-module.exports = Webtask.fromExpress(app);
-```
-
-In the bottom of the Webtask Editor, you can check the URL of the webtask, that we need in our Frontend application.
+@imsingh, please, write what have been accomplished in this article
