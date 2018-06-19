@@ -597,7 +597,7 @@ export class MyApp {
 
 So far, you wrote code that is not related to the user interface (UI) of your application. In this section, you will design the UI and it's behavior. In the end, your application will look like this:
 
-![Audio Player Image](https://i.imgur.com/8zQftDW.png)
+![Audio Player Image](https://i.imgur.com/QND8PHF.png)
 
 ### The Audio Player HTML
 
@@ -648,7 +648,7 @@ In the first `ion-toolbar`, you will have a `seekbar` created with `ion-range`. 
 {% highlight html %}
 {% raw %}
 <!-- ... ion-header and ion-content ... -->
-<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">>
+<ion-footer *ngIf="currentFile.file && loggedIn" [@showHide]="displayFooter">
  <ion-toolbar color="primary">
     <ion-range min="0" color="light" [max]="state.durationSec" [formControl]="seekbar" (ionFocus)="onSeekStart()" (ionBlur)="onSeekEnd($event)"
       name="seekbar">
@@ -1209,7 +1209,7 @@ import { CloudProvider } from '../providers/cloud/cloud';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { AuthService } from '../providers/auth0/auth.service';
-import { IonicStorageModule, Storage } from '@ionic/storage';
+import { IonicStorageModule } from '@ionic/storage';
 ```
 
 Then, ends with you having to define all the required `declarations`, `imports`, `providers` in the `NgModule`, as shown here:
