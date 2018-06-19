@@ -126,13 +126,15 @@ a library built to integrate RxJS and Angular applications to help you manage th
 * [`rxjs-compat`](https://github.com/ReactiveX/rxjs/tree/master/compat): a package to get backwards compatibility with RxJS previous to version 6;
 <!--* [`@auth0/angular-jwt`](https://www.npmjs.com/package/@auth0/angular-jwt): the official Auth0 library to help handling JWTs on Angular apps;-->
 
+To install these libraries, you can use the following commands:
 
 ```bash
 cd audio-player
-npm install --save @angular/animations @ngrx/store moment auth0-js @types/auth0-js rxjs@6.2.1 rxjs-compat@6.2.1
+npm install --save @angular/animations @ngrx/store moment auth0-js @types/auth0-js @auth0/cordova rxjs@6.2.1 rxjs-compat@6.2.1
 ```
 
-> **Note**: As of writing this article, when you create a new Ionic application. It is shipped with Angular 5.x and RxJS 5.x. But the latest `@ngrx/store` version(6.x)  requires RxJS 6.x. That's why you need to install version 6.x of RxJS. Also, Angular 5.x uses RxJS 5.x APIs. So to have backward compatibility with it, you also need to install `rxjs-compat`.
+> **Note**: In the command above, you installed both `rxjs@6.2.1` and `rxjs-compat@6.2.1` because Ionic (at least, at the time of writing) ships with Angular 5 and because Angular 5 uses RxJS 5 APIs.
+
 
 ## Creating an Ionic Service to Manage the Playback
 
@@ -162,7 +164,7 @@ Now that you understand why do you need an observable, you can start by creating
 ionic generate provider audio
 ```
 
-This will generate a service in file called `audio.ts` under `./src/providers/audio/` and this service will be added to `NgModule` in `app.module.ts`. Replace the contents of this file with:
+This will generate a service in a file called `audio.ts` under `./src/providers/audio/` and this service will be added to `NgModule` in `app.module.ts`. Replace the contents of this file with:
 
 ```typescript
 import {Injectable} from '@angular/core';
@@ -268,17 +270,14 @@ export class AudioProvider {
 
 ## Reading the Music Files
 
-Now that you have created Audio Service for playback features. You will need to create a service to get list of audio files.
-
-You can create a cloud service using Ionic:
+Now that you have created the audio service for the playback features, you will need to create a service to get a list of files. To do so, you can create a cloud service using Ionic:
 
 ```bash
 ionic generate provider cloud
 ```
-It will generate a service in file called `cloud.ts` under `./src/providers/cloud`. Replace the content of this file with:
+This command will generate a service in a file called `cloud.ts` under `./src/providers/cloud`. Now, replace the contents of this file with:
 
 ```typescript
-
 import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -287,6 +286,13 @@ export class CloudProvider {
   files:any = [
     { url: 'https://ia801504.us.archive.org/3/items/EdSheeranPerfectOfficialMusicVideoListenVid.com/Ed_Sheeran_-_Perfect_Official_Music_Video%5BListenVid.com%5D.mp3', 
       name: 'Perfect by Ed Sheeran'
+    },
+    {
+      url: 'https://ia801609.us.archive.org/16/items/nusratcollection_20170414_0953/Man%20Atkiya%20Beparwah%20De%20Naal%20Nusrat%20Fateh%20Ali%20Khan.mp3',
+      name: 'Man Atkeya Beparwah by Nusrat Fateh Ali Khan'
+    },
+    { url: 'https://ia801503.us.archive.org/15/items/TheBeatlesPennyLane_201805/The%20Beatles%20-%20Penny%20Lane.mp3',
+      name: 'Penny Lane by The Beatles'
     }
   ];
   getFiles() {
@@ -295,7 +301,7 @@ export class CloudProvider {
 }
 ```
 
-The `getFiles` method above basically mocks a `http` request by returning an `Observable` with a static `files` object.
+The `getFiles` method above basically mocks a HTTP request by returning an `Observable` with a static `files` object.
 
 ## Managing Ionic App's State with NgRx Store
 
@@ -1250,4 +1256,10 @@ ionic cordova run android
 
 ## Conclusion and Next Steps
 
-@imsingh, please, write what have been accomplished in this article
+<!--@brunokrebs: Please do your magic here -->
+In the first part of this series, you have created an Audio Player application with Ionic. You have used RxJS to develop audio playback features. Along with that, you have used NgRx to manage the state of application. Besides that, you have also used Auth0 to add Authentication in the application. With this, you have finished developing first version of application with static audio content.
+
+<!-- @brunokrebs: I am not sure, how you wanna do the second part. Is it will Google Cloud?-->
+In the next part of series, you will create a backend using NodeJS and Google Cloud to serve dyamic audio content to the audio player. You will use [Webtask](https://webtask.io) to host node backend and you will use Auth0 to secure it.
+
+I hope you enjoyed this part. Stay tuned for next part!
