@@ -147,7 +147,7 @@ After installing your app's dependencies, you can start working on the playback 
 The Observable that you are going to create is the central piece of your application. RxJS comes with a helper function named `create` to help you create custom observables. It takes `subscribe` function as an input.
 
 ```typescript
-Observable.create(subscribe);
+Observable.create(subscribe): Observable<any>;
 ```
 
 This `subscribe` function takes an `observer` object and returns a function. Observer objects provide three methods: `next`, `error`, and `complete`.
